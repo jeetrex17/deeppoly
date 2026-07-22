@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="600" viewBox="0 0 1000 600" role="img" aria-labelledby="title description">
+  <title id="title">CIFAR-10 pilot victim validation accuracy</title>
+  <desc id="description">CIFAR-10 pilot victim validation accuracy. Generated from the CIFAR-10 Mac pilot results manifest.</desc>
+  <style>
+    text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    .title { fill: #eef4ff; font-size: 27px; font-weight: 700; }
+    .subtitle { fill: #aebbd3; font-size: 15px; }
+    .label { fill: #eef4ff; font-size: 15px; font-weight: 600; }
+    .small { fill: #aebbd3; font-size: 13px; }
+    .value { fill: #eef4ff; font-size: 17px; font-weight: 700; }
+  </style>
+  <rect width="100%" height="100%" fill="#0b1020"/>
+<text class="title" x="55" y="58">Victim validation accuracy</text>
+  <text class="subtitle" x="55" y="85">Each frozen victim passed the pilot quality gate before transfer evaluation.</text>
+  <line x1="105" y1="495.0" x2="945" y2="495.0" stroke="#31415f" stroke-width="1"/>
+  <text class="small" x="91" y="500.0" text-anchor="end">0%</text>
+  <line x1="105" y1="422.0" x2="945" y2="422.0" stroke="#31415f" stroke-width="1"/>
+  <text class="small" x="91" y="427.0" text-anchor="end">20%</text>
+  <line x1="105" y1="349.0" x2="945" y2="349.0" stroke="#31415f" stroke-width="1"/>
+  <text class="small" x="91" y="354.0" text-anchor="end">40%</text>
+  <line x1="105" y1="276.0" x2="945" y2="276.0" stroke="#31415f" stroke-width="1"/>
+  <text class="small" x="91" y="281.0" text-anchor="end">60%</text>
+  <line x1="105" y1="203.0" x2="945" y2="203.0" stroke="#31415f" stroke-width="1"/>
+  <text class="small" x="91" y="208.0" text-anchor="end">80%</text>
+  <line x1="105" y1="130.0" x2="945" y2="130.0" stroke="#31415f" stroke-width="1"/>
+  <text class="small" x="91" y="135.0" text-anchor="end">100%</text>
+  <rect x="177.8" y="253.0" width="134.4" height="242.0" rx="8" fill="#54d6a0"/>
+  <line x1="163.8" y1="276.0" x2="326.2" y2="276.0" stroke="#ffb85c" stroke-width="3"/>
+  <text class="value" x="245.0" y="241.0" text-anchor="middle">66.3%</text>
+  <text class="label" x="245.0" y="529" text-anchor="middle">Classical CNN</text>
+  <text class="small" x="245.0" y="550" text-anchor="middle">gate 60%</text>
+  <rect x="457.8" y="300.1" width="134.4" height="194.9" rx="8" fill="#54d6a0"/>
+  <line x1="443.8" y1="312.5" x2="606.2" y2="312.5" stroke="#ffb85c" stroke-width="3"/>
+  <text class="value" x="525.0" y="288.1" text-anchor="middle">53.4%</text>
+  <text class="label" x="525.0" y="529" text-anchor="middle">Modern CNN</text>
+  <text class="small" x="525.0" y="550" text-anchor="middle">gate 50%</text>
+  <rect x="737.8" y="339.9" width="134.4" height="155.1" rx="8" fill="#54d6a0"/>
+  <line x1="723.8" y1="349.0" x2="886.2" y2="349.0" stroke="#ffb85c" stroke-width="3"/>
+  <text class="value" x="805.0" y="327.9" text-anchor="middle">42.5%</text>
+  <text class="label" x="805.0" y="529" text-anchor="middle">Patch Transformer</text>
+  <text class="small" x="805.0" y="550" text-anchor="middle">gate 40%</text>
+  <rect x="55" y="548" width="12" height="12" rx="3" fill="#54d6a0"/>
+  <text class="small" x="75" y="559">source-validation accuracy</text>
+  <line x1="270" y1="554" x2="294" y2="554" stroke="#ffb85c" stroke-width="3"/>
+  <text class="small" x="304" y="559">quality-gate threshold</text>
+</svg>

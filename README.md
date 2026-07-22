@@ -18,8 +18,10 @@ This repo implements two approaches: **certified training** (DeepPoly bound prop
 
 - **`rl_attack_transfer.ipynb`** — Legacy DQN prototype retained for provenance; it is not the research evaluation surface.
 - **`notebooks/rl_cross_victim_pilot.ipynb`** — Thin package-backed notebook for protocol inspection, smoke execution, ASR/query analysis, and action diagnostics.
+- **`notebooks/cifar10_mac_pilot.ipynb`** — Apple Silicon/MPS CIFAR-10 pilot. It trains source CNN victims, freezes the recurrent GroupDRO PPO policy, and evaluates its transfer to a held-out patch transformer.
 - **`rl_transfer/`** — Tested cross-victim research harness. The feed-forward DQN is retained as a baseline; the primary method is a recurrent policy trained across source victim families and frozen on held-out families.
 - **`docs/research/rl_cross_victim_research_plan.pdf`** — Canonical 12-page research and publication plan.
+- **`docs/research/cifar10_m4_pilot_summary.md`** — Visual result summary for the completed M4 pilot, including victim-quality gates, attack success over query budget, and the go/no-go decision.
 
 Run a deterministic CPU smoke experiment (no dataset download required):
 

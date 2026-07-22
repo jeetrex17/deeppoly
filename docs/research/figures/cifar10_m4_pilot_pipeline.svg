@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="560" viewBox="0 0 1100 560" role="img" aria-labelledby="title description">
+  <title id="title">CIFAR-10 Mac pilot frozen-policy transfer pipeline</title>
+  <desc id="description">CIFAR-10 Mac pilot frozen-policy transfer pipeline. Generated from the CIFAR-10 Mac pilot results manifest.</desc>
+  <style>
+    text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    .title { fill: #eef4ff; font-size: 27px; font-weight: 700; }
+    .subtitle { fill: #aebbd3; font-size: 15px; }
+    .label { fill: #eef4ff; font-size: 15px; font-weight: 600; }
+    .small { fill: #aebbd3; font-size: 13px; }
+    .value { fill: #eef4ff; font-size: 17px; font-weight: 700; }
+  </style>
+  <rect width="100%" height="100%" fill="#0b1020"/>
+<defs><marker id="arrow" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto"><path d="M0,0 L10,4 L0,8 z" fill="#63d5ff"/></marker></defs>
+  <text class="title" x="55" y="58">Frozen-policy cross-victim transfer pipeline</text>
+  <text class="subtitle" x="55" y="85">The policy learns only from source families, then is held fixed while attacking a separate target family.</text>
+  <rect x="55" y="155" width="225" height="205" rx="16" fill="#151d33" stroke="#54d6a0" stroke-width="2"/>
+  <rect x="55" y="155" width="225" height="9" rx="4" fill="#54d6a0"/>
+  <text class="label" x="73" y="202">1  Train source victims</text>
+  <text class="value" x="73" y="250">Classical CNN + Modern CNN</text>
+  <text class="small" x="73" y="279">source-validation gates passed</text>
+  <line x1="290" y1="257" x2="313" y2="257" stroke="#63d5ff" stroke-width="4" marker-end="url(#arrow)"/>
+  <rect x="325" y="155" width="225" height="205" rx="16" fill="#151d33" stroke="#63d5ff" stroke-width="2"/>
+  <rect x="325" y="155" width="225" height="9" rx="4" fill="#63d5ff"/>
+  <text class="label" x="343" y="202">2  Train RL policy</text>
+  <text class="value" x="343" y="250">400 scheduled episodes</text>
+  <text class="small" x="343" y="279">5,261 source-model calls</text>
+  <line x1="560" y1="257" x2="583" y2="257" stroke="#63d5ff" stroke-width="4" marker-end="url(#arrow)"/>
+  <rect x="595" y="155" width="225" height="205" rx="16" fill="#151d33" stroke="#ffb85c" stroke-width="2"/>
+  <rect x="595" y="155" width="225" height="9" rx="4" fill="#ffb85c"/>
+  <text class="label" x="613" y="202">3  Freeze policy</text>
+  <text class="value" x="613" y="250">No target-model training</text>
+  <text class="small" x="613" y="279">deterministic + stochastic inference</text>
+  <line x1="830" y1="257" x2="853" y2="257" stroke="#63d5ff" stroke-width="4" marker-end="url(#arrow)"/>
+  <rect x="865" y="155" width="180" height="205" rx="16" fill="#151d33" stroke="#ff7ab6" stroke-width="2"/>
+  <rect x="865" y="155" width="180" height="9" rx="4" fill="#ff7ab6"/>
+  <text class="label" x="883" y="202">4  Evaluate</text>
+  <text class="value" x="883" y="250">Patch Transformer</text>
+  <text class="small" x="883" y="279">target clean accuracy 49.5%</text>
+  <text class="label" x="55" y="428">Comparison set on the held-out target</text>
+  <text class="small" x="55" y="455">Fixed action  •  frozen RL policy (deterministic)  •  frozen RL policy (stochastic)  •  random action</text>
+  <text class="small" x="55" y="503">Important: this bounded M4 pilot is exploratory (`research_valid: false`); it is a feasibility check, not a paper-scale transferability claim.</text>
+</svg>

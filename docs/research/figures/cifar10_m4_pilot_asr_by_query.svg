@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="600" viewBox="0 0 1000 600" role="img" aria-labelledby="title description">
+  <title id="title">CIFAR-10 pilot ASR versus query budget</title>
+  <desc id="description">CIFAR-10 pilot ASR versus query budget. Generated from the CIFAR-10 Mac pilot results manifest.</desc>
+  <style>
+    text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    .title { fill: #eef4ff; font-size: 27px; font-weight: 700; }
+    .subtitle { fill: #aebbd3; font-size: 15px; }
+    .label { fill: #eef4ff; font-size: 15px; font-weight: 600; }
+    .small { fill: #aebbd3; font-size: 13px; }
+    .value { fill: #eef4ff; font-size: 17px; font-weight: 700; }
+  </style>
+  <rect width="100%" height="100%" fill="#0b1020"/>
+<text class="title" x="55" y="58">Attack success rate by query budget</text>
+  <text class="subtitle" x="55" y="85">Held-out Patch Transformer; ASR is measured only on 99 clean-correct examples.</text>
+  <line x1="105" y1="495.0" x2="740" y2="495.0" stroke="#31415f" stroke-width="1"/>
+  <text class="small" x="91" y="500.0" text-anchor="end">0%</text>
+  <line x1="105" y1="422.0" x2="740" y2="422.0" stroke="#31415f" stroke-width="1"/>
+  <text class="small" x="91" y="427.0" text-anchor="end">2%</text>
+  <line x1="105" y1="349.0" x2="740" y2="349.0" stroke="#31415f" stroke-width="1"/>
+  <text class="small" x="91" y="354.0" text-anchor="end">4%</text>
+  <line x1="105" y1="276.0" x2="740" y2="276.0" stroke="#31415f" stroke-width="1"/>
+  <text class="small" x="91" y="281.0" text-anchor="end">6%</text>
+  <line x1="105" y1="203.0" x2="740" y2="203.0" stroke="#31415f" stroke-width="1"/>
+  <text class="small" x="91" y="208.0" text-anchor="end">8%</text>
+  <line x1="105" y1="130.0" x2="740" y2="130.0" stroke="#31415f" stroke-width="1"/>
+  <text class="small" x="91" y="135.0" text-anchor="end">10%</text>
+  <line x1="105.0" y1="130" x2="105.0" y2="495" stroke="#31415f" stroke-width="1"/>
+  <text class="small" x="105.0" y="525" text-anchor="middle">0</text>
+  <line x1="232.0" y1="130" x2="232.0" y2="495" stroke="#31415f" stroke-width="1"/>
+  <text class="small" x="232.0" y="525" text-anchor="middle">5</text>
+  <line x1="359.0" y1="130" x2="359.0" y2="495" stroke="#31415f" stroke-width="1"/>
+  <text class="small" x="359.0" y="525" text-anchor="middle">10</text>
+  <line x1="740.0" y1="130" x2="740.0" y2="495" stroke="#31415f" stroke-width="1"/>
+  <text class="small" x="740.0" y="525" text-anchor="middle">25</text>
+  <text class="small" x="422.5" y="572" text-anchor="middle">queries available to the attack</text>
+  <polyline points="105.0,495.0 232.0,458.1 359.0,458.1 740.0,458.1" fill="none" stroke="#aebbd3" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="105.0" cy="495.0" r="4.5" fill="#aebbd3"/>
+  <circle cx="232.0" cy="458.1" r="4.5" fill="#aebbd3"/>
+  <circle cx="359.0" cy="458.1" r="4.5" fill="#aebbd3"/>
+  <circle cx="740.0" cy="458.1" r="4.5" fill="#aebbd3"/>
+  <line x1="772" y1="155" x2="798" y2="155" stroke="#aebbd3" stroke-width="4"/>
+  <text class="label" x="810" y="160">Fixed-action baseline</text>
+  <text class="small" x="810" y="180">1/99 successful; AUC 0.9%</text>
+  <polyline points="105.0,495.0 232.0,421.3 359.0,421.3 740.0,421.3" fill="none" stroke="#63d5ff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="105.0" cy="495.0" r="4.5" fill="#63d5ff"/>
+  <circle cx="232.0" cy="421.3" r="4.5" fill="#63d5ff"/>
+  <circle cx="359.0" cy="421.3" r="4.5" fill="#63d5ff"/>
+  <circle cx="740.0" cy="421.3" r="4.5" fill="#63d5ff"/>
+  <line x1="772" y1="218" x2="798" y2="218" stroke="#63d5ff" stroke-width="4"/>
+  <text class="label" x="810" y="223">RL policy (deterministic)</text>
+  <text class="small" x="810" y="243">2/99 successful; AUC 1.8%</text>
+  <polyline points="105.0,495.0 232.0,458.1 359.0,421.3 740.0,310.7" fill="none" stroke="#54d6a0" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="105.0" cy="495.0" r="4.5" fill="#54d6a0"/>
+  <circle cx="232.0" cy="458.1" r="4.5" fill="#54d6a0"/>
+  <circle cx="359.0" cy="421.3" r="4.5" fill="#54d6a0"/>
+  <circle cx="740.0" cy="310.7" r="4.5" fill="#54d6a0"/>
+  <line x1="772" y1="281" x2="798" y2="281" stroke="#54d6a0" stroke-width="4"/>
+  <text class="label" x="810" y="286">RL policy (stochastic)</text>
+  <text class="small" x="810" y="306">5/99 successful; AUC 2.5%</text>
+  <polyline points="105.0,495.0 232.0,384.4 359.0,384.4 740.0,236.9" fill="none" stroke="#ffb85c" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="105.0" cy="495.0" r="4.5" fill="#ffb85c"/>
+  <circle cx="232.0" cy="384.4" r="4.5" fill="#ffb85c"/>
+  <circle cx="359.0" cy="384.4" r="4.5" fill="#ffb85c"/>
+  <circle cx="740.0" cy="236.9" r="4.5" fill="#ffb85c"/>
+  <line x1="772" y1="344" x2="798" y2="344" stroke="#ffb85c" stroke-width="4"/>
+  <text class="label" x="810" y="349">Random-action baseline</text>
+  <text class="small" x="810" y="369">7/99 successful; AUC 3.9%</text>
+</svg>
