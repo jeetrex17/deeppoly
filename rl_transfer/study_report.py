@@ -225,7 +225,7 @@ def render_markdown(compact: Mapping[str, object], figure_name: str) -> str:
         "",
         f"![Frozen ASR by held-out family](figures/{figure_name})",
         "",
-        "| Held-out target | Seed | Time | Target clean acc. | Gate threshold | Eligible | RL stochastic | Random | Score bandit | Score greedy | Victim gate |",
+        "| Held-out target | Seed | Time | Val. acc. / gate | Test acc. | Eligible | RL stochastic | Random | Score bandit | Score greedy | Victim gate |",
         "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |",
     ]
     for run in compact["runs"]:
@@ -237,7 +237,14 @@ def render_markdown(compact: Mapping[str, object], figure_name: str) -> str:
         threshold = run["victim_accuracy_gate"].get("thresholds", {}).get(
             run["target_family"]
         )
-        threshold_cell = f"{100*threshold:.1f}%" if threshold is not None else "n/a"
+        validation = run["victim_instances"][run["target_family"]][0].get(
+            "source_validation_accuracy"
+        )
+        gate_cell = (
+            f"{100*validation:.1f}% / ≥{100*threshold:.1f}%"
+            if validation is not None and threshold is not None
+            else "n/a"
+        )
 
         def result_cell(metrics: Mapping[str, object]) -> str:
             curve = metrics["asr_at_budgets"]
@@ -250,12 +257,34 @@ def render_markdown(compact: Mapping[str, object], figure_name: str) -> str:
         lines.append(
             f"| {run['target_family']} | {run['seed']} | "
             f"{run['elapsed_seconds'] / 60:.1f}m | "
-            f"{100*run['target_test_accuracy']:.1f}% | {threshold_cell} | "
+            f"{gate_cell} | {100*run['target_test_accuracy']:.1f}% | "
             f"{learned['eligible']} | "
             f"{result_cell(learned)} | {result_cell(random)} | "
             f"{result_cell(bandit)} | {result_cell(greedy)} | "
             f"{'pass' if run['victim_accuracy_gate']['passed'] else 'fail'} |"
         )
+    lines.extend(
+        (
+            "",
+            "## Across-seed mean ASR",
+            "",
+            "| Held-out target | RL stochastic | Random | Score bandit | Score greedy |",
+            "| --- | ---: | ---: | ---: | ---: |",
+        )
+    )
+    for family, methods in compact["aggregate"].items():
+        cells = []
+        for method, _, _ in METHODS:
+            metric = methods[method]["final_asr"]
+            interval = metric.get("ci95")
+            if interval is None:
+                cells.append(f"{100*metric['mean']:.2f}%")
+            else:
+                cells.append(
+                    f"{100*metric['mean']:.2f}% "
+                    f"[{100*interval[0]:.2f}, {100*interval[1]:.2f}]"
+                )
+        lines.append(f"| {family} | {' | '.join(cells)} |")
     interpretation = [
         f"The study completed {len(compact['runs'])} run(s) across {family_count} held-out "
         f"target family/families and {seed_count} unique seed(s).",
@@ -274,8 +303,11 @@ def render_markdown(compact: Mapping[str, object], figure_name: str) -> str:
             reasons.append("fewer than three aligned seeds are available")
         if not promotion.get("victim_gates_passed", True):
             reasons.append("one or more victim-quality gates failed")
-        if any(not passed for passed in promotion.get("folds", {}).values()):
+        fold_details = promotion.get("fold_details", {})
+        if any(not detail.get("comparison_passed", False) for detail in fold_details.values()):
             reasons.append("at least one fold failed the paired RL-versus-control criterion")
+        if any(not detail.get("entropy_passed", False) for detail in fold_details.values()):
+            reasons.append("at least one fold failed the per-seed RL entropy criterion")
         detail = "; ".join(reasons) if reasons else "one or more prespecified checks failed"
         interpretation.append(f"The promotion gate did not pass because {detail}.")
     interpretation.append(

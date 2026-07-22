@@ -7,7 +7,7 @@ Research code for two related robustness directions:
 
 The transferability work asks a specific question: can an RL attack policy learn reusable attack behavior from multiple source architectures, then transfer to an unseen target architecture under a fixed query budget?
 
-> Current status: the M4/CIFAR-10 run is an **exploratory feasibility pilot**, not a paper-ready result. It validates the frozen cross-victim workflow end-to-end, but its RL attacker did not beat the random-action control.
+> Current status: the corrected M4/CIFAR-10 study completed all **9 family/seed folds**. Every victim-quality gate passed, but the RL promotion gate failed: stochastic PPO was near-random and did not establish a statistically and practically validated advantage over the controls. This is a useful negative exploratory result, not a paper-ready superiority claim.
 
 ## M4 CIFAR-10 pilot results
 
@@ -54,9 +54,9 @@ The policy **was frozen** during target evaluation: its SHA-256 digest was uncha
 
 Read the full visual report in [docs/research/cifar10_m4_pilot_summary.md](docs/research/cifar10_m4_pilot_summary.md). The committed raw aggregate is [cifar10_m4_pilot_results.json](docs/research/cifar10_m4_pilot_results.json).
 
-## Upgraded cross-victim study
+## Upgraded three-seed cross-victim study
 
-The next iteration directly addresses the first pilot's failure modes:
+The upgraded iteration directly addresses the first pilot's failure modes:
 
 - dense confidence-margin rewards replace sparse true-class-score rewards;
 - two independently initialized victims are rotated inside each source family;
@@ -68,7 +68,39 @@ The next iteration directly addresses the first pilot's failure modes:
 - victim checkpoints are shared across folds with fitting-code/backend contracts, independent fit seeds, checksum verification, and writer locks;
 - every policy block records family/instance eligibility, successes, returns, margin reductions, GroupDRO losses, weights, and source calls.
 
-The corrected one-seed diagnostic and fresh-seed study are rerunnable with the commands below. Results generated before the score-greedy, RNG-provenance, and rollout-offset fixes are intentionally excluded because they are scientifically superseded.
+The full clean-revision run used an Apple M4 with PyTorch MPS and finished in **1 h 54 min**:
+
+![Full three-seed frozen ASR by target family](docs/research/figures/cifar10_m4_study_asr.svg)
+
+| Study item | Completed value |
+| --- | --- |
+| Held-out folds | Classical CNN, Modern CNN, Transformer |
+| Fresh seeds | 17, 29, 41 |
+| Independent victim instances | 18 across all seeds; two per source family and one held-out target per run |
+| Policy training | 5,400 scheduled episodes; 3,640 trainable sequences; 91,800 source-model calls |
+| Frozen target evaluation | 1,859 clean-correct image/run cases |
+| Threat model | 25 total score queries, including initialization; L∞ = 8/255 |
+| Promotion result | **Fail** in every held-out family; all victim-quality gates passed |
+
+Victim fitting was materially stronger and stable across seeds:
+
+| Victim family | Validation accuracy range | Gate | Target-test accuracy range |
+| --- | ---: | ---: | ---: |
+| Classical CNN | 73.4–74.4% | 60% | 73.3–78.7% |
+| Modern CNN | 73.3–76.2% | 50% | 70.7–79.3% |
+| Transformer | 51.1–56.3% | 40% | 53.0–58.3% |
+
+Mean final attack success rate across the three fresh seeds:
+
+| Held-out target | Stochastic RL | Random | Score bandit | Score greedy |
+| --- | ---: | ---: | ---: | ---: |
+| Classical CNN | 1.45% | 1.74% | 1.17% | **13.55%** |
+| Modern CNN | 1.01% | 1.29% | 2.50% | **15.49%** |
+| Transformer | 1.65% | 1.84% | 4.02% | **27.20%** |
+
+The result is clear for this setup: dense-reward GroupDRO PPO did **not** learn a transferable advantage. Its normalized action entropy stayed near random (0.988–0.994), while the custom patch-based score-greedy attack was consistently much stronger under the same total query budget. This argues for changing the RL state/action/reward design or testing matched ablations before spending on larger compute—not for claiming that transfer attacks fail generally.
+
+See the [full visual report](docs/research/cifar10_m4_study_summary.md), [verified compact results](docs/research/cifar10_m4_study_results.json), and [one-seed diagnostic](docs/research/cifar10_m4_study_quick_summary.md). Results generated before the score-greedy, RNG-provenance, and rollout-offset fixes are intentionally excluded because they are scientifically superseded.
 
 ## Run it locally
 
@@ -127,11 +159,16 @@ uv run python -m rl_transfer.cifar_study_cli \
 - [notebooks/cifar10_mac_pilot.ipynb](notebooks/cifar10_mac_pilot.ipynb) — train or inspect an M4 run interactively.
 - [notebooks/cifar10_m4_study.ipynb](notebooks/cifar10_m4_study.ipynb) — inspect cross-fold, multi-seed aggregates and promotion gates.
 - [docs/research/cifar10_m4_pilot_summary.md](docs/research/cifar10_m4_pilot_summary.md) — rendered figures and result interpretation.
+- [docs/research/cifar10_m4_study_summary.md](docs/research/cifar10_m4_study_summary.md) — corrected nine-fold result with per-seed time, victim accuracy, and control ASR.
 - Regenerate the figures after recording a new manifest:
 
 ```bash
 uv run python -m rl_transfer.pilot_report \
   --input docs/research/cifar10_m4_pilot_results.json \
+  --output-dir docs/research
+
+uv run python -m rl_transfer.study_report \
+  --input output/rl_transfer/cifar10_m4_studies/cifar10-m4-study/study_manifest.json \
   --output-dir docs/research
 ```
 
@@ -152,7 +189,7 @@ uv run python -m rl_transfer.pilot_report \
 
 The RL attacker is never allowed to train on, tune against, or update during evaluation on the held-out target family. Every target call—including initialization and failed attempts—counts toward the total target-query budget. Lower-budget results are computed from each same full attack trajectory rather than by giving separate runs more chances.
 
-The current pilot uses one dataset, one held-out model per family, and one seed. It should be expanded to multiple architecture instances, nested family-level selection, repeated seeds, and uncertainty reporting before making a general transferability claim.
+The upgraded study still uses one dataset and one held-out target instance per family/seed. Broader architecture populations, nested family-level model selection, matched component ablations, and more seeds are required before making a general transferability claim.
 
 The upgraded study is still exploratory: it changes reward shaping, victim population size, and family weighting together, so it cannot attribute any improvement to one component without matched ablations. MPS determinism is requested in warning mode, but some operators remain nondeterministic; checkpoint hashes are therefore the exact artifact identity even when fit seeds match.
 

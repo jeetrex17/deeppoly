@@ -1,0 +1,3116 @@
+{
+  "aggregate": {
+    "classical_cnn": {
+      "bandit_action": {
+        "action_entropy": {
+          "ci95": null,
+          "mean": 0.9556188781283802,
+          "values": [
+            0.9556188781283802
+          ]
+        },
+        "asr_query_auc": {
+          "ci95": null,
+          "mean": 0.0,
+          "values": [
+            0.0
+          ]
+        },
+        "final_asr": {
+          "ci95": null,
+          "mean": 0.0,
+          "values": [
+            0.0
+          ]
+        }
+      },
+      "fixed_action": {
+        "action_entropy": {
+          "ci95": null,
+          "mean": 0.0,
+          "values": [
+            -0.0
+          ]
+        },
+        "asr_query_auc": {
+          "ci95": null,
+          "mean": 0.0,
+          "values": [
+            0.0
+          ]
+        },
+        "final_asr": {
+          "ci95": null,
+          "mean": 0.0,
+          "values": [
+            0.0
+          ]
+        }
+      },
+      "groupdro_recurrent_ppo": {
+        "action_entropy": {
+          "ci95": null,
+          "mean": 0.029942514613463977,
+          "values": [
+            0.029942514613463977
+          ]
+        },
+        "asr_query_auc": {
+          "ci95": null,
+          "mean": 0.0,
+          "values": [
+            0.0
+          ]
+        },
+        "final_asr": {
+          "ci95": null,
+          "mean": 0.0,
+          "values": [
+            0.0
+          ]
+        }
+      },
+      "groupdro_recurrent_ppo_stochastic": {
+        "action_entropy": {
+          "ci95": null,
+          "mean": 0.9893317924591231,
+          "values": [
+            0.9893317924591231
+          ]
+        },
+        "asr_query_auc": {
+          "ci95": null,
+          "mean": 0.006666666666666667,
+          "values": [
+            0.006666666666666667
+          ]
+        },
+        "final_asr": {
+          "ci95": null,
+          "mean": 0.022222222222222223,
+          "values": [
+            0.022222222222222223
+          ]
+        }
+      },
+      "random_action": {
+        "action_entropy": {
+          "ci95": null,
+          "mean": 0.9893568881464117,
+          "values": [
+            0.9893568881464117
+          ]
+        },
+        "asr_query_auc": {
+          "ci95": null,
+          "mean": 0.006666666666666667,
+          "values": [
+            0.006666666666666667
+          ]
+        },
+        "final_asr": {
+          "ci95": null,
+          "mean": 0.022222222222222223,
+          "values": [
+            0.022222222222222223
+          ]
+        }
+      },
+      "score_greedy": {
+        "action_entropy": {
+          "ci95": null,
+          "mean": 0.991477212367978,
+          "values": [
+            0.991477212367978
+          ]
+        },
+        "asr_query_auc": {
+          "ci95": null,
+          "mean": 0.09555555555555557,
+          "values": [
+            0.09555555555555557
+          ]
+        },
+        "final_asr": {
+          "ci95": null,
+          "mean": 0.2,
+          "values": [
+            0.2
+          ]
+        }
+      }
+    },
+    "modern_cnn": {
+      "bandit_action": {
+        "action_entropy": {
+          "ci95": null,
+          "mean": 0.9593627484776579,
+          "values": [
+            0.9593627484776579
+          ]
+        },
+        "asr_query_auc": {
+          "ci95": null,
+          "mean": 0.018181818181818184,
+          "values": [
+            0.018181818181818184
+          ]
+        },
+        "final_asr": {
+          "ci95": null,
+          "mean": 0.06060606060606061,
+          "values": [
+            0.06060606060606061
+          ]
+        }
+      },
+      "fixed_action": {
+        "action_entropy": {
+          "ci95": null,
+          "mean": 0.0,
+          "values": [
+            -0.0
+          ]
+        },
+        "asr_query_auc": {
+          "ci95": null,
+          "mean": 0.0,
+          "values": [
+            0.0
+          ]
+        },
+        "final_asr": {
+          "ci95": null,
+          "mean": 0.0,
+          "values": [
+            0.0
+          ]
+        }
+      },
+      "groupdro_recurrent_ppo": {
+        "action_entropy": {
+          "ci95": null,
+          "mean": 0.15079692625899163,
+          "values": [
+            0.15079692625899163
+          ]
+        },
+        "asr_query_auc": {
+          "ci95": null,
+          "mean": 0.0,
+          "values": [
+            0.0
+          ]
+        },
+        "final_asr": {
+          "ci95": null,
+          "mean": 0.0,
+          "values": [
+            0.0
+          ]
+        }
+      },
+      "groupdro_recurrent_ppo_stochastic": {
+        "action_entropy": {
+          "ci95": null,
+          "mean": 0.986758995649658,
+          "values": [
+            0.986758995649658
+          ]
+        },
+        "asr_query_auc": {
+          "ci95": null,
+          "mean": 0.0,
+          "values": [
+            0.0
+          ]
+        },
+        "final_asr": {
+          "ci95": null,
+          "mean": 0.0,
+          "values": [
+            0.0
+          ]
+        }
+      },
+      "random_action": {
+        "action_entropy": {
+          "ci95": null,
+          "mean": 0.9872369346484362,
+          "values": [
+            0.9872369346484362
+          ]
+        },
+        "asr_query_auc": {
+          "ci95": null,
+          "mean": 0.0,
+          "values": [
+            0.0
+          ]
+        },
+        "final_asr": {
+          "ci95": null,
+          "mean": 0.0,
+          "values": [
+            0.0
+          ]
+        }
+      },
+      "score_greedy": {
+        "action_entropy": {
+          "ci95": null,
+          "mean": 0.989482760314802,
+          "values": [
+            0.989482760314802
+          ]
+        },
+        "asr_query_auc": {
+          "ci95": null,
+          "mean": 0.045454545454545456,
+          "values": [
+            0.045454545454545456
+          ]
+        },
+        "final_asr": {
+          "ci95": null,
+          "mean": 0.15151515151515152,
+          "values": [
+            0.15151515151515152
+          ]
+        }
+      }
+    },
+    "transformer": {
+      "bandit_action": {
+        "action_entropy": {
+          "ci95": null,
+          "mean": 0.9408304688003167,
+          "values": [
+            0.9408304688003167
+          ]
+        },
+        "asr_query_auc": {
+          "ci95": null,
+          "mean": 0.02571428571428571,
+          "values": [
+            0.02571428571428571
+          ]
+        },
+        "final_asr": {
+          "ci95": null,
+          "mean": 0.02857142857142857,
+          "values": [
+            0.02857142857142857
+          ]
+        }
+      },
+      "fixed_action": {
+        "action_entropy": {
+          "ci95": null,
+          "mean": 0.0,
+          "values": [
+            -0.0
+          ]
+        },
+        "asr_query_auc": {
+          "ci95": null,
+          "mean": 0.0,
+          "values": [
+            0.0
+          ]
+        },
+        "final_asr": {
+          "ci95": null,
+          "mean": 0.0,
+          "values": [
+            0.0
+          ]
+        }
+      },
+      "groupdro_recurrent_ppo": {
+        "action_entropy": {
+          "ci95": null,
+          "mean": 0.038642724943205364,
+          "values": [
+            0.038642724943205364
+          ]
+        },
+        "asr_query_auc": {
+          "ci95": null,
+          "mean": 0.02571428571428571,
+          "values": [
+            0.02571428571428571
+          ]
+        },
+        "final_asr": {
+          "ci95": null,
+          "mean": 0.02857142857142857,
+          "values": [
+            0.02857142857142857
+          ]
+        }
+      },
+      "groupdro_recurrent_ppo_stochastic": {
+        "action_entropy": {
+          "ci95": null,
+          "mean": 0.9849813813123938,
+          "values": [
+            0.9849813813123938
+          ]
+        },
+        "asr_query_auc": {
+          "ci95": null,
+          "mean": 0.02571428571428571,
+          "values": [
+            0.02571428571428571
+          ]
+        },
+        "final_asr": {
+          "ci95": null,
+          "mean": 0.02857142857142857,
+          "values": [
+            0.02857142857142857
+          ]
+        }
+      },
+      "random_action": {
+        "action_entropy": {
+          "ci95": null,
+          "mean": 0.9868318864283303,
+          "values": [
+            0.9868318864283303
+          ]
+        },
+        "asr_query_auc": {
+          "ci95": null,
+          "mean": 0.00857142857142857,
+          "values": [
+            0.00857142857142857
+          ]
+        },
+        "final_asr": {
+          "ci95": null,
+          "mean": 0.02857142857142857,
+          "values": [
+            0.02857142857142857
+          ]
+        }
+      },
+      "score_greedy": {
+        "action_entropy": {
+          "ci95": null,
+          "mean": 0.9878854399116234,
+          "values": [
+            0.9878854399116234
+          ]
+        },
+        "asr_query_auc": {
+          "ci95": null,
+          "mean": 0.14857142857142855,
+          "values": [
+            0.14857142857142855
+          ]
+        },
+        "final_asr": {
+          "ci95": null,
+          "mean": 0.2857142857142857,
+          "values": [
+            0.2857142857142857
+          ]
+        }
+      }
+    }
+  },
+  "config": {
+    "base_config": "configs/rl_transfer/cifar10_m4_iteration_quick.json",
+    "entropy_max": 0.95,
+    "entropy_min": 0.1,
+    "minimum_asr_gain": 0.01,
+    "minimum_auc_gain": 0.005,
+    "minimum_seeds": 3,
+    "name": "cifar10-m4-study-quick",
+    "output_dir": "output/rl_transfer/cifar10_m4_studies",
+    "research_valid": false,
+    "schema_version": 1,
+    "seeds": [
+      7
+    ],
+    "target_families": [
+      "classical_cnn",
+      "modern_cnn",
+      "transformer"
+    ]
+  },
+  "elapsed_seconds": 286.19874016707763,
+  "name": "cifar10-m4-study-quick",
+  "promotion_gate": {
+    "entropy_bounds": [
+      0.1,
+      0.95
+    ],
+    "fold_details": {
+      "classical_cnn": {
+        "comparison_passed": false,
+        "comparisons": {
+          "bandit_action": {
+            "asr_query_auc_delta": {
+              "ci95": null,
+              "mean": 0.006666666666666667,
+              "values": [
+                0.006666666666666667
+              ]
+            },
+            "final_asr_delta": {
+              "ci95": null,
+              "mean": 0.022222222222222223,
+              "values": [
+                0.022222222222222223
+              ]
+            }
+          },
+          "random_action": {
+            "asr_query_auc_delta": {
+              "ci95": null,
+              "mean": 0.0,
+              "values": [
+                0.0
+              ]
+            },
+            "final_asr_delta": {
+              "ci95": null,
+              "mean": 0.0,
+              "values": [
+                0.0
+              ]
+            }
+          },
+          "score_greedy": {
+            "asr_query_auc_delta": {
+              "ci95": null,
+              "mean": -0.0888888888888889,
+              "values": [
+                -0.0888888888888889
+              ]
+            },
+            "final_asr_delta": {
+              "ci95": null,
+              "mean": -0.17777777777777778,
+              "values": [
+                -0.17777777777777778
+              ]
+            }
+          }
+        },
+        "entropy_passed": false,
+        "grid_complete": true,
+        "passed": false,
+        "rl_action_entropy_by_seed": {
+          "7": 0.9893317924591231
+        },
+        "rl_action_entropy_mean": 0.9893317924591231,
+        "seeds": [
+          7
+        ]
+      },
+      "modern_cnn": {
+        "comparison_passed": false,
+        "comparisons": {
+          "bandit_action": {
+            "asr_query_auc_delta": {
+              "ci95": null,
+              "mean": -0.018181818181818184,
+              "values": [
+                -0.018181818181818184
+              ]
+            },
+            "final_asr_delta": {
+              "ci95": null,
+              "mean": -0.06060606060606061,
+              "values": [
+                -0.06060606060606061
+              ]
+            }
+          },
+          "random_action": {
+            "asr_query_auc_delta": {
+              "ci95": null,
+              "mean": 0.0,
+              "values": [
+                0.0
+              ]
+            },
+            "final_asr_delta": {
+              "ci95": null,
+              "mean": 0.0,
+              "values": [
+                0.0
+              ]
+            }
+          },
+          "score_greedy": {
+            "asr_query_auc_delta": {
+              "ci95": null,
+              "mean": -0.045454545454545456,
+              "values": [
+                -0.045454545454545456
+              ]
+            },
+            "final_asr_delta": {
+              "ci95": null,
+              "mean": -0.15151515151515152,
+              "values": [
+                -0.15151515151515152
+              ]
+            }
+          }
+        },
+        "entropy_passed": false,
+        "grid_complete": true,
+        "passed": false,
+        "rl_action_entropy_by_seed": {
+          "7": 0.986758995649658
+        },
+        "rl_action_entropy_mean": 0.986758995649658,
+        "seeds": [
+          7
+        ]
+      },
+      "transformer": {
+        "comparison_passed": false,
+        "comparisons": {
+          "bandit_action": {
+            "asr_query_auc_delta": {
+              "ci95": null,
+              "mean": 0.0,
+              "values": [
+                0.0
+              ]
+            },
+            "final_asr_delta": {
+              "ci95": null,
+              "mean": 0.0,
+              "values": [
+                0.0
+              ]
+            }
+          },
+          "random_action": {
+            "asr_query_auc_delta": {
+              "ci95": null,
+              "mean": 0.01714285714285714,
+              "values": [
+                0.01714285714285714
+              ]
+            },
+            "final_asr_delta": {
+              "ci95": null,
+              "mean": 0.0,
+              "values": [
+                0.0
+              ]
+            }
+          },
+          "score_greedy": {
+            "asr_query_auc_delta": {
+              "ci95": null,
+              "mean": -0.12285714285714283,
+              "values": [
+                -0.12285714285714283
+              ]
+            },
+            "final_asr_delta": {
+              "ci95": null,
+              "mean": -0.2571428571428571,
+              "values": [
+                -0.2571428571428571
+              ]
+            }
+          }
+        },
+        "entropy_passed": false,
+        "grid_complete": true,
+        "passed": false,
+        "rl_action_entropy_by_seed": {
+          "7": 0.9849813813123938
+        },
+        "rl_action_entropy_mean": 0.9849813813123938,
+        "seeds": [
+          7
+        ]
+      }
+    },
+    "folds": {
+      "classical_cnn": false,
+      "modern_cnn": false,
+      "transformer": false
+    },
+    "grid_complete": true,
+    "minimum_asr_gain": 0.01,
+    "minimum_auc_gain": 0.005,
+    "minimum_seeds": 3,
+    "missing_runs": [],
+    "passed": false,
+    "requirements": [
+      "the exact configured family-by-seed grid is complete with at least 3 unique seeds per fold",
+      "paired Student-t 95% lower bounds for stochastic RL minus random, bandit, and score-greedy are positive, with mean gains of at least 0.010 final ASR and 0.005 ASR/query AUC",
+      "normalized action entropy for every seed remains between 0.10 and 0.95",
+      "every victim-quality gate passes"
+    ],
+    "victim_gates_passed": false
+  },
+  "research_valid": false,
+  "runs": [
+    {
+      "elapsed_seconds": 165.39889549999498,
+      "evaluation": {
+        "bandit_action": {
+          "asr_at_budgets": {
+            "0": 0.0,
+            "10": 0.0,
+            "25": 0.0,
+            "5": 0.0
+          },
+          "asr_query_auc": 0.0,
+          "eligible": 45,
+          "eligible_sample_ids_sha256": "4d5beb96d2f668c716f15efb53044760f9cf265bee698046d64f33e646a65113",
+          "frozen": true,
+          "initialization_included": true,
+          "max_total_target_calls": 25,
+          "normalized_action_entropy": 0.9556188781283802,
+          "policy_digest_after": "09f2395f4d425bbab6285bb0f540ab0ae4e90ff5b170d1c3c2da60e7ecf9001d",
+          "policy_digest_before": "09f2395f4d425bbab6285bb0f540ab0ae4e90ff5b170d1c3c2da60e7ecf9001d",
+          "query_budget": 25,
+          "successes": 0
+        },
+        "fixed_action": {
+          "asr_at_budgets": {
+            "0": 0.0,
+            "10": 0.0,
+            "25": 0.0,
+            "5": 0.0
+          },
+          "asr_query_auc": 0.0,
+          "eligible": 45,
+          "eligible_sample_ids_sha256": "4d5beb96d2f668c716f15efb53044760f9cf265bee698046d64f33e646a65113",
+          "frozen": true,
+          "initialization_included": true,
+          "max_total_target_calls": 25,
+          "normalized_action_entropy": -0.0,
+          "policy_digest_after": "90371dccedf2bff1d42f3aaba4ad31d26577e656af56a3c22e39df1df878dce0",
+          "policy_digest_before": "90371dccedf2bff1d42f3aaba4ad31d26577e656af56a3c22e39df1df878dce0",
+          "query_budget": 25,
+          "successes": 0
+        },
+        "groupdro_recurrent_ppo": {
+          "asr_at_budgets": {
+            "0": 0.0,
+            "10": 0.0,
+            "25": 0.0,
+            "5": 0.0
+          },
+          "asr_query_auc": 0.0,
+          "eligible": 45,
+          "eligible_sample_ids_sha256": "4d5beb96d2f668c716f15efb53044760f9cf265bee698046d64f33e646a65113",
+          "frozen": true,
+          "initialization_included": true,
+          "max_total_target_calls": 25,
+          "normalized_action_entropy": 0.029942514613463977,
+          "policy_digest_after": "6c9cdec3344c4b458b13e4eb66a74596eb444e416052a90b5a9b8867144aab8d",
+          "policy_digest_before": "6c9cdec3344c4b458b13e4eb66a74596eb444e416052a90b5a9b8867144aab8d",
+          "query_budget": 25,
+          "successes": 0
+        },
+        "groupdro_recurrent_ppo_stochastic": {
+          "asr_at_budgets": {
+            "0": 0.0,
+            "10": 0.0,
+            "25": 0.022222222222222223,
+            "5": 0.0
+          },
+          "asr_query_auc": 0.006666666666666667,
+          "eligible": 45,
+          "eligible_sample_ids_sha256": "4d5beb96d2f668c716f15efb53044760f9cf265bee698046d64f33e646a65113",
+          "frozen": true,
+          "initialization_included": true,
+          "max_total_target_calls": 25,
+          "normalized_action_entropy": 0.9893317924591231,
+          "policy_digest_after": "6c9cdec3344c4b458b13e4eb66a74596eb444e416052a90b5a9b8867144aab8d",
+          "policy_digest_before": "6c9cdec3344c4b458b13e4eb66a74596eb444e416052a90b5a9b8867144aab8d",
+          "query_budget": 25,
+          "successes": 1
+        },
+        "random_action": {
+          "asr_at_budgets": {
+            "0": 0.0,
+            "10": 0.0,
+            "25": 0.022222222222222223,
+            "5": 0.0
+          },
+          "asr_query_auc": 0.006666666666666667,
+          "eligible": 45,
+          "eligible_sample_ids_sha256": "4d5beb96d2f668c716f15efb53044760f9cf265bee698046d64f33e646a65113",
+          "frozen": true,
+          "initialization_included": true,
+          "max_total_target_calls": 25,
+          "normalized_action_entropy": 0.9893568881464117,
+          "policy_digest_after": "f0770a438d4f20952ed088d606c126a08f2df8a7f8fb84feb7e6aa901c85895c",
+          "policy_digest_before": "f0770a438d4f20952ed088d606c126a08f2df8a7f8fb84feb7e6aa901c85895c",
+          "query_budget": 25,
+          "successes": 1
+        },
+        "score_greedy": {
+          "asr_at_budgets": {
+            "0": 0.0,
+            "10": 0.08888888888888889,
+            "25": 0.2,
+            "5": 0.0
+          },
+          "asr_query_auc": 0.09555555555555557,
+          "eligible": 45,
+          "eligible_sample_ids_sha256": "4d5beb96d2f668c716f15efb53044760f9cf265bee698046d64f33e646a65113",
+          "frozen": true,
+          "initialization_included": true,
+          "max_total_target_calls": 25,
+          "normalized_action_entropy": 0.991477212367978,
+          "policy_digest_after": "034c1983a78b021121c6ea4d79306042c1b81b4f8dfe1e0380e141e039c22cdb",
+          "policy_digest_before": "034c1983a78b021121c6ea4d79306042c1b81b4f8dfe1e0380e141e039c22cdb",
+          "query_budget": 25,
+          "successes": 9
+        }
+      },
+      "policy_checkpoint_sha256": "519df834c3f3ad92bb16db66c1d397db43355d0b4e4282ba20271bf1599c3c64",
+      "policy_training": {
+        "episodes": 100,
+        "final_family_weights": {
+          "modern_cnn": 0.5087951938085444,
+          "transformer": 0.4912048061914553
+        },
+        "policy_sample_pool_size": 200,
+        "source_calls": 783,
+        "source_calls_by_family": {
+          "modern_cnn": 364,
+          "transformer": 419
+        },
+        "source_calls_by_victim": {
+          "cifar_depthwise_cnn_research__instance_0__seed_1234977392695825399": 170,
+          "cifar_depthwise_cnn_research__instance_1__seed_6328650363430726259": 194,
+          "cifar_patch_transformer_research__instance_0__seed_3924142934676539415": 192,
+          "cifar_patch_transformer_research__instance_1__seed_346057566515425261": 227
+        },
+        "trained_episodes": 29,
+        "unique_policy_samples_visited": 100
+      },
+      "policy_training_blocks": [
+        {
+          "episode_offset": 0,
+          "episodes": 25,
+          "family_diagnostics": {
+            "modern_cnn": {
+              "eligible_episodes": 4,
+              "episode_return": {
+                "count": 4,
+                "max": -0.20159955859184267,
+                "mean": -0.24550845637917518,
+                "min": -0.32426368236541747,
+                "std": 0.05446603988707075
+              },
+              "groupdro_loss": 0.24550845637917518,
+              "margin_reduction": {
+                "count": 4,
+                "max": 0.00768008828163147,
+                "mean": -0.0011016912758350372,
+                "min": -0.016852736473083496,
+                "std": 0.010893207977414152
+              },
+              "scheduled_episodes": 13,
+              "source_calls": 109,
+              "successful_episodes": 0,
+              "weight_after": 0.5107518912771388,
+              "weight_before": 0.5
+            },
+            "transformer": {
+              "eligible_episodes": 5,
+              "episode_return": {
+                "count": 5,
+                "max": 1.8923382902145385,
+                "mean": 0.1846335039138794,
+                "min": -0.26017632126808166,
+                "std": 0.9546935119369043
+              },
+              "groupdro_loss": -0.1846335039138794,
+              "margin_reduction": {
+                "count": 5,
+                "max": 0.0013104379177093506,
+                "mean": -0.0002732992172241211,
+                "min": -0.004035264253616333,
+                "std": 0.0021363925127944124
+              },
+              "scheduled_episodes": 12,
+              "source_calls": 119,
+              "successful_episodes": 1,
+              "weight_after": 0.4892481087228612,
+              "weight_before": 0.5
+            }
+          },
+          "family_weights": {
+            "modern_cnn": 0.5107518912771388,
+            "transformer": 0.4892481087228612
+          },
+          "instance_diagnostics": {
+            "cifar_depthwise_cnn_research__instance_0__seed_1234977392695825399": {
+              "eligible_episodes": 1,
+              "episode_return": {
+                "count": 1,
+                "max": -0.32426368236541747,
+                "mean": -0.32426368236541747,
+                "min": -0.32426368236541747,
+                "std": 0.0
+              },
+              "margin_reduction": {
+                "count": 1,
+                "max": -0.016852736473083496,
+                "mean": -0.016852736473083496,
+                "min": -0.016852736473083496,
+                "std": 0.0
+              },
+              "scheduled_episodes": 7,
+              "source_calls": 31,
+              "successful_episodes": 0
+            },
+            "cifar_depthwise_cnn_research__instance_1__seed_6328650363430726259": {
+              "eligible_episodes": 3,
+              "episode_return": {
+                "count": 3,
+                "max": -0.20159955859184267,
+                "mean": -0.21925671438376107,
+                "min": -0.23708913266658785,
+                "std": 0.017745436165596096
+              },
+              "margin_reduction": {
+                "count": 3,
+                "max": 0.00768008828163147,
+                "mean": 0.004148657123247783,
+                "min": 0.0005821734666824341,
+                "std": 0.0035490872331192186
+              },
+              "scheduled_episodes": 6,
+              "source_calls": 78,
+              "successful_episodes": 0
+            },
+            "cifar_patch_transformer_research__instance_0__seed_3924142934676539415": {
+              "eligible_episodes": 1,
+              "episode_return": {
+                "count": 1,
+                "max": -0.23344781041145324,
+                "mean": -0.23344781041145324,
+                "min": -0.23344781041145324,
+                "std": 0.0
+              },
+              "margin_reduction": {
+                "count": 1,
+                "max": 0.0013104379177093506,
+                "mean": 0.0013104379177093506,
+                "min": 0.0013104379177093506,
+                "std": 0.0
+              },
+              "scheduled_episodes": 6,
+              "source_calls": 30,
+              "successful_episodes": 0
+            },
+            "cifar_patch_transformer_research__instance_1__seed_346057566515425261": {
+              "eligible_episodes": 4,
+              "episode_return": {
+                "count": 4,
+                "max": 1.8923382902145385,
+                "mean": 0.28915383249521254,
+                "min": -0.26017632126808166,
+                "std": 1.0688418693774246
+              },
+              "margin_reduction": {
+                "count": 4,
+                "max": 0.0005295872688293457,
+                "mean": -0.000669233500957489,
+                "min": -0.004035264253616333,
+                "std": 0.002245099309918308
+              },
+              "scheduled_episodes": 6,
+              "source_calls": 89,
+              "successful_episodes": 1
+            }
+          },
+          "ppo": {
+            "advantage_mean": -7.991133315954357e-05,
+            "advantage_std": 0.42528653144836426,
+            "entropy": 4.559263229370117,
+            "loss": -0.11824135482311249,
+            "policy_loss": -0.22421126067638397,
+            "update_epochs": 4.0,
+            "value_loss": 0.3031250834465027
+          },
+          "trained_episodes": 9,
+          "unique_sample_count": 25
+        },
+        {
+          "episode_offset": 25,
+          "episodes": 25,
+          "family_diagnostics": {
+            "modern_cnn": {
+              "eligible_episodes": 4,
+              "episode_return": {
+                "count": 4,
+                "max": -0.19230659842491152,
+                "mean": -0.2465736472606659,
+                "min": -0.3025803321599961,
+                "std": 0.057538144514537405
+              },
+              "groupdro_loss": 0.2465736472606659,
+              "margin_reduction": {
+                "count": 4,
+                "max": 0.0095386803150177,
+                "mean": -0.0013147294521331787,
+                "min": -0.012516066431999207,
+                "std": 0.01150762890290748
+              },
+              "scheduled_episodes": 13,
+              "source_calls": 109,
+              "successful_episodes": 0,
+              "weight_after": 0.5111572814969542,
+              "weight_before": 0.5107518912771388
+            },
+            "transformer": {
+              "eligible_episodes": 4,
+              "episode_return": {
+                "count": 4,
+                "max": -0.21064612805843355,
+                "mean": -0.23035025015473365,
+                "min": -0.24526852905750274,
+                "std": 0.01458938025613848
+              },
+              "groupdro_loss": 0.23035025015473365,
+              "margin_reduction": {
+                "count": 4,
+                "max": 0.0058707743883132935,
+                "mean": 0.0019299499690532684,
+                "min": -0.0010537058115005493,
+                "std": 0.0029178760512276985
+              },
+              "scheduled_episodes": 12,
+              "source_calls": 108,
+              "successful_episodes": 0,
+              "weight_after": 0.4888427185030459,
+              "weight_before": 0.4892481087228612
+            }
+          },
+          "family_weights": {
+            "modern_cnn": 0.5111572814969542,
+            "transformer": 0.4888427185030459
+          },
+          "instance_diagnostics": {
+            "cifar_depthwise_cnn_research__instance_0__seed_1234977392695825399": {
+              "eligible_episodes": 2,
+              "episode_return": {
+                "count": 2,
+                "max": -0.19230659842491152,
+                "mean": -0.19707139372825624,
+                "min": -0.20183618903160097,
+                "std": 0.006738438139921738
+              },
+              "margin_reduction": {
+                "count": 2,
+                "max": 0.0095386803150177,
+                "mean": 0.008585721254348755,
+                "min": 0.00763276219367981,
+                "std": 0.0013476876279843477
+              },
+              "scheduled_episodes": 6,
+              "source_calls": 54,
+              "successful_episodes": 0
+            },
+            "cifar_depthwise_cnn_research__instance_1__seed_6328650363430726259": {
+              "eligible_episodes": 2,
+              "episode_return": {
+                "count": 2,
+                "max": -0.2895714694261551,
+                "mean": -0.29607590079307555,
+                "min": -0.3025803321599961,
+                "std": 0.009198655054623939
+              },
+              "margin_reduction": {
+                "count": 2,
+                "max": -0.009914293885231018,
+                "mean": -0.011215180158615112,
+                "min": -0.012516066431999207,
+                "std": 0.00183973101092478
+              },
+              "scheduled_episodes": 7,
+              "source_calls": 55,
+              "successful_episodes": 0
+            },
+            "cifar_patch_transformer_research__instance_0__seed_3924142934676539415": {
+              "eligible_episodes": 3,
+              "episode_return": {
+                "count": 3,
+                "max": -0.21064612805843355,
+                "mean": -0.22860128223896026,
+                "min": -0.24526852905750274,
+                "std": 0.017347094620277965
+              },
+              "margin_reduction": {
+                "count": 3,
+                "max": 0.0058707743883132935,
+                "mean": 0.0022797435522079468,
+                "min": -0.0010537058115005493,
+                "std": 0.0034694189240555957
+              },
+              "scheduled_episodes": 6,
+              "source_calls": 78,
+              "successful_episodes": 0
+            },
+            "cifar_patch_transformer_research__instance_1__seed_346057566515425261": {
+              "eligible_episodes": 1,
+              "episode_return": {
+                "count": 1,
+                "max": -0.23559715390205382,
+                "mean": -0.23559715390205382,
+                "min": -0.23559715390205382,
+                "std": 0.0
+              },
+              "margin_reduction": {
+                "count": 1,
+                "max": 0.0008805692195892334,
+                "mean": 0.0008805692195892334,
+                "min": 0.0008805692195892334,
+                "std": 0.0
+              },
+              "scheduled_episodes": 6,
+              "source_calls": 30,
+              "successful_episodes": 0
+            }
+          },
+          "ppo": {
+            "advantage_mean": -0.20737139880657196,
+            "advantage_std": 0.08375344425439835,
+            "entropy": 4.557819366455078,
+            "loss": -0.045699380338191986,
+            "policy_loss": -0.01125606894493103,
+            "update_epochs": 4.0,
+            "value_loss": 0.02226976305246353
+          },
+          "trained_episodes": 8,
+          "unique_sample_count": 25
+        },
+        {
+          "episode_offset": 50,
+          "episodes": 25,
+          "family_diagnostics": {
+            "modern_cnn": {
+              "eligible_episodes": 4,
+              "episode_return": {
+                "count": 4,
+                "max": -0.1889662051200867,
+                "mean": -0.2312817031145096,
+                "min": -0.28373490810394286,
+                "std": 0.042463513425204075
+              },
+              "groupdro_loss": 0.2312817031145096,
+              "margin_reduction": {
+                "count": 4,
+                "max": 0.010206758975982666,
+                "mean": 0.0017436593770980835,
+                "min": -0.008746981620788574,
+                "std": 0.008492702685040817
+              },
+              "scheduled_episodes": 13,
+              "source_calls": 109,
+              "successful_episodes": 0,
+              "weight_after": 0.5106469688907449,
+              "weight_before": 0.5111572814969542
+            },
+            "transformer": {
+              "eligible_episodes": 3,
+              "episode_return": {
+                "count": 3,
+                "max": -0.23765649437904357,
+                "mean": -0.2517039183775584,
+                "min": -0.265201141834259,
+                "std": 0.013780563897576406
+              },
+              "groupdro_loss": 0.2517039183775584,
+              "margin_reduction": {
+                "count": 3,
+                "max": 0.0004687011241912842,
+                "mean": -0.002340783675511678,
+                "min": -0.005040228366851807,
+                "std": 0.0027561127795152815
+              },
+              "scheduled_episodes": 12,
+              "source_calls": 84,
+              "successful_episodes": 0,
+              "weight_after": 0.489353031109255,
+              "weight_before": 0.4888427185030459
+            }
+          },
+          "family_weights": {
+            "modern_cnn": 0.5106469688907449,
+            "transformer": 0.489353031109255
+          },
+          "instance_diagnostics": {
+            "cifar_depthwise_cnn_research__instance_0__seed_1234977392695825399": {
+              "eligible_episodes": 3,
+              "episode_return": {
+                "count": 3,
+                "max": -0.1889662051200867,
+                "mean": -0.23970483283201852,
+                "min": -0.28373490810394286,
+                "std": 0.047739190118715205
+              },
+              "margin_reduction": {
+                "count": 3,
+                "max": 0.010206758975982666,
+                "mean": 5.903343359629313e-05,
+                "min": -0.008746981620788574,
+                "std": 0.009547838023743043
+              },
+              "scheduled_episodes": 7,
+              "source_calls": 79,
+              "successful_episodes": 0
+            },
+            "cifar_depthwise_cnn_research__instance_1__seed_6328650363430726259": {
+              "eligible_episodes": 1,
+              "episode_return": {
+                "count": 1,
+                "max": -0.20601231396198275,
+                "mean": -0.20601231396198275,
+                "min": -0.20601231396198275,
+                "std": 0.0
+              },
+              "margin_reduction": {
+                "count": 1,
+                "max": 0.006797537207603455,
+                "mean": 0.006797537207603455,
+                "min": 0.006797537207603455,
+                "std": 0.0
+              },
+              "scheduled_episodes": 6,
+              "source_calls": 30,
+              "successful_episodes": 0
+            },
+            "cifar_patch_transformer_research__instance_0__seed_3924142934676539415": {
+              "eligible_episodes": 1,
+              "episode_return": {
+                "count": 1,
+                "max": -0.265201141834259,
+                "mean": -0.265201141834259,
+                "min": -0.265201141834259,
+                "std": 0.0
+              },
+              "margin_reduction": {
+                "count": 1,
+                "max": -0.005040228366851807,
+                "mean": -0.005040228366851807,
+                "min": -0.005040228366851807,
+                "std": 0.0
+              },
+              "scheduled_episodes": 6,
+              "source_calls": 30,
+              "successful_episodes": 0
+            },
+            "cifar_patch_transformer_research__instance_1__seed_346057566515425261": {
+              "eligible_episodes": 2,
+              "episode_return": {
+                "count": 2,
+                "max": -0.23765649437904357,
+                "mean": -0.24495530664920806,
+                "min": -0.25225411891937255,
+                "std": 0.01032207930168178
+              },
+              "margin_reduction": {
+                "count": 2,
+                "max": 0.0004687011241912842,
+                "mean": -0.0009910613298416138,
+                "min": -0.0024508237838745117,
+                "std": 0.002064415860336356
+              },
+              "scheduled_episodes": 6,
+              "source_calls": 54,
+              "successful_episodes": 0
+            }
+          },
+          "ppo": {
+            "advantage_mean": -0.058158475905656815,
+            "advantage_std": 0.10533434897661209,
+            "entropy": 4.556858062744141,
+            "loss": -0.026976779103279114,
+            "policy_loss": 0.011509241536259651,
+            "update_epochs": 4.0,
+            "value_loss": 0.014165115542709827
+          },
+          "trained_episodes": 7,
+          "unique_sample_count": 25
+        },
+        {
+          "episode_offset": 75,
+          "episodes": 25,
+          "family_diagnostics": {
+            "modern_cnn": {
+              "eligible_episodes": 1,
+              "episode_return": {
+                "count": 1,
+                "max": -0.16384627461433413,
+                "mean": -0.16384627461433413,
+                "min": -0.16384627461433413,
+                "std": 0.0
+              },
+              "groupdro_loss": 0.16384627461433413,
+              "margin_reduction": {
+                "count": 1,
+                "max": 0.015230745077133179,
+                "mean": 0.015230745077133179,
+                "min": 0.015230745077133179,
+                "std": 0.0
+              },
+              "scheduled_episodes": 13,
+              "source_calls": 37,
+              "successful_episodes": 0,
+              "weight_after": 0.5087951938085444,
+              "weight_before": 0.5106469688907449
+            },
+            "transformer": {
+              "eligible_episodes": 4,
+              "episode_return": {
+                "count": 4,
+                "max": -0.21330263257026674,
+                "mean": -0.2379453720152378,
+                "min": -0.2572159820795059,
+                "std": 0.01878781651246324
+              },
+              "groupdro_loss": 0.2379453720152378,
+              "margin_reduction": {
+                "count": 4,
+                "max": 0.005339473485946655,
+                "mean": 0.00041092559695243835,
+                "min": -0.003443196415901184,
+                "std": 0.003757563302492651
+              },
+              "scheduled_episodes": 12,
+              "source_calls": 108,
+              "successful_episodes": 0,
+              "weight_after": 0.4912048061914553,
+              "weight_before": 0.489353031109255
+            }
+          },
+          "family_weights": {
+            "modern_cnn": 0.5087951938085444,
+            "transformer": 0.4912048061914553
+          },
+          "instance_diagnostics": {
+            "cifar_depthwise_cnn_research__instance_0__seed_1234977392695825399": {
+              "eligible_episodes": 0,
+              "episode_return": {
+                "count": 0,
+                "max": null,
+                "mean": null,
+                "min": null,
+                "std": null
+              },
+              "margin_reduction": {
+                "count": 0,
+                "max": null,
+                "mean": null,
+                "min": null,
+                "std": null
+              },
+              "scheduled_episodes": 6,
+              "source_calls": 6,
+              "successful_episodes": 0
+            },
+            "cifar_depthwise_cnn_research__instance_1__seed_6328650363430726259": {
+              "eligible_episodes": 1,
+              "episode_return": {
+                "count": 1,
+                "max": -0.16384627461433413,
+                "mean": -0.16384627461433413,
+                "min": -0.16384627461433413,
+                "std": 0.0
+              },
+              "margin_reduction": {
+                "count": 1,
+                "max": 0.015230745077133179,
+                "mean": 0.015230745077133179,
+                "min": 0.015230745077133179,
+                "std": 0.0
+              },
+              "scheduled_episodes": 7,
+              "source_calls": 31,
+              "successful_episodes": 0
+            },
+            "cifar_patch_transformer_research__instance_0__seed_3924142934676539415": {
+              "eligible_episodes": 2,
+              "episode_return": {
+                "count": 2,
+                "max": -0.2348914349079132,
+                "mean": -0.24605370849370956,
+                "min": -0.2572159820795059,
+                "std": 0.015785838691952166
+              },
+              "margin_reduction": {
+                "count": 2,
+                "max": 0.0010217130184173584,
+                "mean": -0.0012107416987419128,
+                "min": -0.003443196415901184,
+                "std": 0.0031571677383904332
+              },
+              "scheduled_episodes": 6,
+              "source_calls": 54,
+              "successful_episodes": 0
+            },
+            "cifar_patch_transformer_research__instance_1__seed_346057566515425261": {
+              "eligible_episodes": 2,
+              "episode_return": {
+                "count": 2,
+                "max": -0.21330263257026674,
+                "mean": -0.22983703553676604,
+                "min": -0.24637143850326537,
+                "std": 0.023383176920965268
+              },
+              "margin_reduction": {
+                "count": 2,
+                "max": 0.005339473485946655,
+                "mean": 0.0020325928926467896,
+                "min": -0.0012742877006530762,
+                "std": 0.004676635384193057
+              },
+              "scheduled_episodes": 6,
+              "source_calls": 54,
+              "successful_episodes": 0
+            }
+          },
+          "ppo": {
+            "advantage_mean": 0.05488661304116249,
+            "advantage_std": 0.10134171694517136,
+            "entropy": 4.5559587478637695,
+            "loss": -0.3118102252483368,
+            "policy_loss": -0.27442634105682373,
+            "update_epochs": 4.0,
+            "value_loss": 0.016351426020264626
+          },
+          "trained_episodes": 5,
+          "unique_sample_count": 25
+        }
+      ],
+      "provenance": {
+        "config_digest": "87142a71b9ec987b2811d7a30a43225386bcbf377de608674d3a2533f0c6bf6d",
+        "fingerprint": "a40b525e0f7cd05865e74d4ca95659be49f5a204731a93b69582d4b724201841",
+        "split_digest": "73ccef8ffa8c2b3e3570150a7c76fb2c76f4c3a65353b573d51e474b5bed951c",
+        "victim_cache_digest": "8cb997150964fff9f384c191966587fc7046d4cc90787cc32fdd4696029fb5d5",
+        "victim_code_digest": "77b35052f8ff6e300e77944760f65a05c1cb842315de672809e62f82532418bf"
+      },
+      "runtime": {
+        "code_digest": "aa56aee9d252a6da97a5b19f9fd1b50d0fde0492b1829304a799cda1939fcbf1",
+        "determinism": "warn_only; some MPS operators may not have deterministic implementations",
+        "git_revision": "2eb481a34adc52f3faa5db9fcbd9d8e9e28e5f68",
+        "platform": "macOS-15.7.3-arm64-arm-64bit-Mach-O",
+        "torch": "2.13.0"
+      },
+      "seed": 7,
+      "source_families": [
+        "modern_cnn",
+        "transformer"
+      ],
+      "target_family": "classical_cnn",
+      "target_test_accuracy": 0.45,
+      "victim_accuracy_gate": {
+        "passed": false,
+        "thresholds": {
+          "classical_cnn": 0.6,
+          "modern_cnn": 0.5,
+          "transformer": 0.4
+        }
+      },
+      "victim_instances": {
+        "classical_cnn": [
+          {
+            "checkpoint_sha256": "30a248b2e708090fd84bda5f1890699c161c34acc1bd250b30488c5d36a811a4",
+            "instance_index": 0,
+            "resumed": false,
+            "source_validation_accuracy": 0.38,
+            "training_seed": 1758446201349190468,
+            "victim_id": "cifar_residual_cnn_research__instance_0__seed_3151851158866423633"
+          }
+        ],
+        "modern_cnn": [
+          {
+            "checkpoint_sha256": "d4f4f61d3602a5787ca4547a0d4b76505d97024962104e9bf49d41bad779546d",
+            "instance_index": 0,
+            "resumed": false,
+            "source_validation_accuracy": 0.2833333333333333,
+            "training_seed": 4178107079568402244,
+            "victim_id": "cifar_depthwise_cnn_research__instance_0__seed_1234977392695825399"
+          },
+          {
+            "checkpoint_sha256": "5538ff6d050764e3451510a64cc8b39741f1a4b330ecf7b51ae14e7ed94fe56d",
+            "instance_index": 1,
+            "resumed": false,
+            "source_validation_accuracy": 0.2866666666666667,
+            "training_seed": 1085506259032369615,
+            "victim_id": "cifar_depthwise_cnn_research__instance_1__seed_6328650363430726259"
+          }
+        ],
+        "transformer": [
+          {
+            "checkpoint_sha256": "346585dd047dafba408034d5ba79d7b5de743f90021b1ea895ea2d77b9379697",
+            "instance_index": 0,
+            "resumed": false,
+            "source_validation_accuracy": 0.2633333333333333,
+            "training_seed": 4459260701486946382,
+            "victim_id": "cifar_patch_transformer_research__instance_0__seed_3924142934676539415"
+          },
+          {
+            "checkpoint_sha256": "14cf990379d62167e0fa9bf1b9c310bbd43eb85927e743601a4a4200b76e22d0",
+            "instance_index": 1,
+            "resumed": false,
+            "source_validation_accuracy": 0.25666666666666665,
+            "training_seed": 7953033452088705983,
+            "victim_id": "cifar_patch_transformer_research__instance_1__seed_346057566515425261"
+          }
+        ]
+      }
+    },
+    {
+      "elapsed_seconds": 69.49886904191226,
+      "evaluation": {
+        "bandit_action": {
+          "asr_at_budgets": {
+            "0": 0.0,
+            "10": 0.0,
+            "25": 0.06060606060606061,
+            "5": 0.0
+          },
+          "asr_query_auc": 0.018181818181818184,
+          "eligible": 33,
+          "eligible_sample_ids_sha256": "045c14b2ec65b5e4b8df5bc90223b0088cd29f52d8b734737df5ca6dbb38265c",
+          "frozen": true,
+          "initialization_included": true,
+          "max_total_target_calls": 25,
+          "normalized_action_entropy": 0.9593627484776579,
+          "policy_digest_after": "09f2395f4d425bbab6285bb0f540ab0ae4e90ff5b170d1c3c2da60e7ecf9001d",
+          "policy_digest_before": "09f2395f4d425bbab6285bb0f540ab0ae4e90ff5b170d1c3c2da60e7ecf9001d",
+          "query_budget": 25,
+          "successes": 2
+        },
+        "fixed_action": {
+          "asr_at_budgets": {
+            "0": 0.0,
+            "10": 0.0,
+            "25": 0.0,
+            "5": 0.0
+          },
+          "asr_query_auc": 0.0,
+          "eligible": 33,
+          "eligible_sample_ids_sha256": "045c14b2ec65b5e4b8df5bc90223b0088cd29f52d8b734737df5ca6dbb38265c",
+          "frozen": true,
+          "initialization_included": true,
+          "max_total_target_calls": 25,
+          "normalized_action_entropy": -0.0,
+          "policy_digest_after": "90371dccedf2bff1d42f3aaba4ad31d26577e656af56a3c22e39df1df878dce0",
+          "policy_digest_before": "90371dccedf2bff1d42f3aaba4ad31d26577e656af56a3c22e39df1df878dce0",
+          "query_budget": 25,
+          "successes": 0
+        },
+        "groupdro_recurrent_ppo": {
+          "asr_at_budgets": {
+            "0": 0.0,
+            "10": 0.0,
+            "25": 0.0,
+            "5": 0.0
+          },
+          "asr_query_auc": 0.0,
+          "eligible": 33,
+          "eligible_sample_ids_sha256": "045c14b2ec65b5e4b8df5bc90223b0088cd29f52d8b734737df5ca6dbb38265c",
+          "frozen": true,
+          "initialization_included": true,
+          "max_total_target_calls": 25,
+          "normalized_action_entropy": 0.15079692625899163,
+          "policy_digest_after": "39055f7df1bc955a0306b6bfc46422dcc7c95f7f128956dca7f09dd2d9252eb8",
+          "policy_digest_before": "39055f7df1bc955a0306b6bfc46422dcc7c95f7f128956dca7f09dd2d9252eb8",
+          "query_budget": 25,
+          "successes": 0
+        },
+        "groupdro_recurrent_ppo_stochastic": {
+          "asr_at_budgets": {
+            "0": 0.0,
+            "10": 0.0,
+            "25": 0.0,
+            "5": 0.0
+          },
+          "asr_query_auc": 0.0,
+          "eligible": 33,
+          "eligible_sample_ids_sha256": "045c14b2ec65b5e4b8df5bc90223b0088cd29f52d8b734737df5ca6dbb38265c",
+          "frozen": true,
+          "initialization_included": true,
+          "max_total_target_calls": 25,
+          "normalized_action_entropy": 0.986758995649658,
+          "policy_digest_after": "39055f7df1bc955a0306b6bfc46422dcc7c95f7f128956dca7f09dd2d9252eb8",
+          "policy_digest_before": "39055f7df1bc955a0306b6bfc46422dcc7c95f7f128956dca7f09dd2d9252eb8",
+          "query_budget": 25,
+          "successes": 0
+        },
+        "random_action": {
+          "asr_at_budgets": {
+            "0": 0.0,
+            "10": 0.0,
+            "25": 0.0,
+            "5": 0.0
+          },
+          "asr_query_auc": 0.0,
+          "eligible": 33,
+          "eligible_sample_ids_sha256": "045c14b2ec65b5e4b8df5bc90223b0088cd29f52d8b734737df5ca6dbb38265c",
+          "frozen": true,
+          "initialization_included": true,
+          "max_total_target_calls": 25,
+          "normalized_action_entropy": 0.9872369346484362,
+          "policy_digest_after": "f0770a438d4f20952ed088d606c126a08f2df8a7f8fb84feb7e6aa901c85895c",
+          "policy_digest_before": "f0770a438d4f20952ed088d606c126a08f2df8a7f8fb84feb7e6aa901c85895c",
+          "query_budget": 25,
+          "successes": 0
+        },
+        "score_greedy": {
+          "asr_at_budgets": {
+            "0": 0.0,
+            "10": 0.0,
+            "25": 0.15151515151515152,
+            "5": 0.0
+          },
+          "asr_query_auc": 0.045454545454545456,
+          "eligible": 33,
+          "eligible_sample_ids_sha256": "045c14b2ec65b5e4b8df5bc90223b0088cd29f52d8b734737df5ca6dbb38265c",
+          "frozen": true,
+          "initialization_included": true,
+          "max_total_target_calls": 25,
+          "normalized_action_entropy": 0.989482760314802,
+          "policy_digest_after": "034c1983a78b021121c6ea4d79306042c1b81b4f8dfe1e0380e141e039c22cdb",
+          "policy_digest_before": "034c1983a78b021121c6ea4d79306042c1b81b4f8dfe1e0380e141e039c22cdb",
+          "query_budget": 25,
+          "successes": 5
+        }
+      },
+      "policy_checkpoint_sha256": "58afa3729cb822d0841407a3c65abf2aa059dab8df98b3a98aaf6a06917081e3",
+      "policy_training": {
+        "episodes": 100,
+        "final_family_weights": {
+          "classical_cnn": 0.5011993009557965,
+          "transformer": 0.4988006990442037
+        },
+        "policy_sample_pool_size": 200,
+        "source_calls": 994,
+        "source_calls_by_family": {
+          "classical_cnn": 563,
+          "transformer": 431
+        },
+        "source_calls_by_victim": {
+          "cifar_patch_transformer_research__instance_0__seed_3924142934676539415": 192,
+          "cifar_patch_transformer_research__instance_1__seed_346057566515425261": 239,
+          "cifar_residual_cnn_research__instance_0__seed_3151851158866423633": 201,
+          "cifar_residual_cnn_research__instance_1__seed_2163238385238607272": 362
+        },
+        "trained_episodes": 38,
+        "unique_policy_samples_visited": 100
+      },
+      "policy_training_blocks": [
+        {
+          "episode_offset": 0,
+          "episodes": 25,
+          "family_diagnostics": {
+            "classical_cnn": {
+              "eligible_episodes": 7,
+              "episode_return": {
+                "count": 7,
+                "max": -0.1824322694540024,
+                "mean": -0.22344079192195623,
+                "min": -0.25728415489196776,
+                "std": 0.026700119751625683
+              },
+              "groupdro_loss": 0.22344079192195623,
+              "margin_reduction": {
+                "count": 7,
+                "max": 0.011513546109199524,
+                "mean": 0.0033118416156087604,
+                "min": -0.0034568309783935547,
+                "std": 0.005340023950325138
+              },
+              "scheduled_episodes": 13,
+              "source_calls": 181,
+              "successful_episodes": 0,
+              "weight_after": 0.5096023865148468,
+              "weight_before": 0.5
+            },
+            "transformer": {
+              "eligible_episodes": 5,
+              "episode_return": {
+                "count": 5,
+                "max": 1.7727905404567719,
+                "mean": 0.16070190024375916,
+                "min": -0.26017632126808166,
+                "std": 0.9012747479354218
+              },
+              "groupdro_loss": -0.16070190024375916,
+              "margin_reduction": {
+                "count": 5,
+                "max": 0.0019511580467224121,
+                "mean": -0.00025961995124816893,
+                "min": -0.004035264253616333,
+                "std": 0.0025852493263164877
+              },
+              "scheduled_episodes": 12,
+              "source_calls": 131,
+              "successful_episodes": 1,
+              "weight_after": 0.4903976134851533,
+              "weight_before": 0.5
+            }
+          },
+          "family_weights": {
+            "classical_cnn": 0.5096023865148468,
+            "transformer": 0.4903976134851533
+          },
+          "instance_diagnostics": {
+            "cifar_patch_transformer_research__instance_0__seed_3924142934676539415": {
+              "eligible_episodes": 1,
+              "episode_return": {
+                "count": 1,
+                "max": -0.24854291021823882,
+                "mean": -0.24854291021823882,
+                "min": -0.24854291021823882,
+                "std": 0.0
+              },
+              "margin_reduction": {
+                "count": 1,
+                "max": -0.0017085820436477661,
+                "mean": -0.0017085820436477661,
+                "min": -0.0017085820436477661,
+                "std": 0.0
+              },
+              "scheduled_episodes": 6,
+              "source_calls": 30,
+              "successful_episodes": 0
+            },
+            "cifar_patch_transformer_research__instance_1__seed_346057566515425261": {
+              "eligible_episodes": 4,
+              "episode_return": {
+                "count": 4,
+                "max": 1.7727905404567719,
+                "mean": 0.26301310285925866,
+                "min": -0.26017632126808166,
+                "std": 1.0066169482399345
+              },
+              "margin_reduction": {
+                "count": 4,
+                "max": 0.0019511580467224121,
+                "mean": 0.00010262057185173035,
+                "min": -0.004035264253616333,
+                "std": 0.0028348834417759074
+              },
+              "scheduled_episodes": 6,
+              "source_calls": 101,
+              "successful_episodes": 1
+            },
+            "cifar_residual_cnn_research__instance_0__seed_3151851158866423633": {
+              "eligible_episodes": 3,
+              "episode_return": {
+                "count": 3,
+                "max": -0.2199976870417595,
+                "mean": -0.23965311338504156,
+                "min": -0.25728415489196776,
+                "std": 0.018725484550750727
+              },
+              "margin_reduction": {
+                "count": 3,
+                "max": 0.004000462591648102,
+                "mean": 6.937732299168904e-05,
+                "min": -0.0034568309783935547,
+                "std": 0.003745096910150148
+              },
+              "scheduled_episodes": 7,
+              "source_calls": 79,
+              "successful_episodes": 0
+            },
+            "cifar_residual_cnn_research__instance_1__seed_2163238385238607272": {
+              "eligible_episodes": 4,
+              "episode_return": {
+                "count": 4,
+                "max": -0.1824322694540024,
+                "mean": -0.2112815508246422,
+                "min": -0.24718794763088228,
+                "std": 0.02705663287297226
+              },
+              "margin_reduction": {
+                "count": 4,
+                "max": 0.011513546109199524,
+                "mean": 0.005743689835071564,
+                "min": -0.0014375895261764526,
+                "std": 0.005411326574594452
+              },
+              "scheduled_episodes": 6,
+              "source_calls": 102,
+              "successful_episodes": 0
+            }
+          },
+          "ppo": {
+            "advantage_mean": 0.03639928251504898,
+            "advantage_std": 0.4497084319591522,
+            "entropy": 4.559037685394287,
+            "loss": -0.01430516317486763,
+            "policy_loss": -0.08763457834720612,
+            "update_epochs": 4.0,
+            "value_loss": 0.23783957958221436
+          },
+          "trained_episodes": 12,
+          "unique_sample_count": 25
+        },
+        {
+          "episode_offset": 25,
+          "episodes": 25,
+          "family_diagnostics": {
+            "classical_cnn": {
+              "eligible_episodes": 5,
+              "episode_return": {
+                "count": 5,
+                "max": -0.1341050469875336,
+                "mean": -0.24525227189064025,
+                "min": -0.3469940626621246,
+                "std": 0.08226382500397926
+              },
+              "groupdro_loss": 0.24525227189064025,
+              "margin_reduction": {
+                "count": 5,
+                "max": 0.021178990602493286,
+                "mean": -0.0010504543781280518,
+                "min": -0.021398812532424927,
+                "std": 0.016452765000795854
+              },
+              "scheduled_episodes": 13,
+              "source_calls": 133,
+              "successful_episodes": 0,
+              "weight_after": 0.5098031804781338,
+              "weight_before": 0.5096023865148468
+            },
+            "transformer": {
+              "eligible_episodes": 4,
+              "episode_return": {
+                "count": 4,
+                "max": -0.21903332114219667,
+                "mean": -0.23721748754382133,
+                "min": -0.25576706767082213,
+                "std": 0.01574588942529838
+              },
+              "groupdro_loss": 0.23721748754382133,
+              "margin_reduction": {
+                "count": 4,
+                "max": 0.004193335771560669,
+                "mean": 0.000556502491235733,
+                "min": -0.0031534135341644287,
+                "std": 0.0031491778850596774
+              },
+              "scheduled_episodes": 12,
+              "source_calls": 108,
+              "successful_episodes": 0,
+              "weight_after": 0.4901968195218663,
+              "weight_before": 0.4903976134851533
+            }
+          },
+          "family_weights": {
+            "classical_cnn": 0.5098031804781338,
+            "transformer": 0.4901968195218663
+          },
+          "instance_diagnostics": {
+            "cifar_patch_transformer_research__instance_0__seed_3924142934676539415": {
+              "eligible_episodes": 3,
+              "episode_return": {
+                "count": 3,
+                "max": -0.21903332114219667,
+                "mean": -0.2353207621971766,
+                "min": -0.25576706767082213,
+                "std": 0.018716681021136137
+              },
+              "margin_reduction": {
+                "count": 3,
+                "max": 0.004193335771560669,
+                "mean": 0.0009358475605646769,
+                "min": -0.0031534135341644287,
+                "std": 0.00374333620422723
+              },
+              "scheduled_episodes": 6,
+              "source_calls": 78,
+              "successful_episodes": 0
+            },
+            "cifar_patch_transformer_research__instance_1__seed_346057566515425261": {
+              "eligible_episodes": 1,
+              "episode_return": {
+                "count": 1,
+                "max": -0.2429076635837555,
+                "mean": -0.2429076635837555,
+                "min": -0.2429076635837555,
+                "std": 0.0
+              },
+              "margin_reduction": {
+                "count": 1,
+                "max": -0.0005815327167510986,
+                "mean": -0.0005815327167510986,
+                "min": -0.0005815327167510986,
+                "std": 0.0
+              },
+              "scheduled_episodes": 6,
+              "source_calls": 30,
+              "successful_episodes": 0
+            },
+            "cifar_residual_cnn_research__instance_0__seed_3151851158866423633": {
+              "eligible_episodes": 0,
+              "episode_return": {
+                "count": 0,
+                "max": null,
+                "mean": null,
+                "min": null,
+                "std": null
+              },
+              "margin_reduction": {
+                "count": 0,
+                "max": null,
+                "mean": null,
+                "min": null,
+                "std": null
+              },
+              "scheduled_episodes": 6,
+              "source_calls": 6,
+              "successful_episodes": 0
+            },
+            "cifar_residual_cnn_research__instance_1__seed_2163238385238607272": {
+              "eligible_episodes": 5,
+              "episode_return": {
+                "count": 5,
+                "max": -0.1341050469875336,
+                "mean": -0.24525227189064025,
+                "min": -0.3469940626621246,
+                "std": 0.08226382500397926
+              },
+              "margin_reduction": {
+                "count": 5,
+                "max": 0.021178990602493286,
+                "mean": -0.0010504543781280518,
+                "min": -0.021398812532424927,
+                "std": 0.016452765000795854
+              },
+              "scheduled_episodes": 7,
+              "source_calls": 127,
+              "successful_episodes": 0
+            }
+          },
+          "ppo": {
+            "advantage_mean": -0.20028947293758392,
+            "advantage_std": 0.06422638148069382,
+            "entropy": 4.557663440704346,
+            "loss": -0.027262816205620766,
+            "policy_loss": 0.011128957383334637,
+            "update_epochs": 4.0,
+            "value_loss": 0.014369717799127102
+          },
+          "trained_episodes": 9,
+          "unique_sample_count": 25
+        },
+        {
+          "episode_offset": 50,
+          "episodes": 25,
+          "family_diagnostics": {
+            "classical_cnn": {
+              "eligible_episodes": 6,
+              "episode_return": {
+                "count": 6,
+                "max": 1.9669974970817568,
+                "mean": 0.10975143740574521,
+                "min": -0.3249040597677231,
+                "std": 0.9112181204921548
+              },
+              "groupdro_loss": -0.10975143740574521,
+              "margin_reduction": {
+                "count": 6,
+                "max": 0.007399499416351318,
+                "mean": -0.0023830458521842957,
+                "min": -0.016980811953544617,
+                "std": 0.011037300360403016
+              },
+              "scheduled_episodes": 13,
+              "source_calls": 140,
+              "successful_episodes": 1,
+              "weight_after": 0.5013944631752881,
+              "weight_before": 0.5098031804781338
+            },
+            "transformer": {
+              "eligible_episodes": 3,
+              "episode_return": {
+                "count": 3,
+                "max": -0.19071619749069213,
+                "mean": -0.22664736747741698,
+                "min": -0.2449316883087158,
+                "std": 0.031118938365496545
+              },
+              "groupdro_loss": 0.22664736747741698,
+              "margin_reduction": {
+                "count": 3,
+                "max": 0.009856760501861572,
+                "mean": 0.0026705265045166016,
+                "min": -0.000986337661743164,
+                "std": 0.006223787673099309
+              },
+              "scheduled_episodes": 12,
+              "source_calls": 84,
+              "successful_episodes": 0,
+              "weight_after": 0.49860553682471204,
+              "weight_before": 0.4901968195218663
+            }
+          },
+          "family_weights": {
+            "classical_cnn": 0.5013944631752881,
+            "transformer": 0.49860553682471204
+          },
+          "instance_diagnostics": {
+            "cifar_patch_transformer_research__instance_0__seed_3924142934676539415": {
+              "eligible_episodes": 1,
+              "episode_return": {
+                "count": 1,
+                "max": -0.19071619749069213,
+                "mean": -0.19071619749069213,
+                "min": -0.19071619749069213,
+                "std": 0.0
+              },
+              "margin_reduction": {
+                "count": 1,
+                "max": 0.009856760501861572,
+                "mean": 0.009856760501861572,
+                "min": 0.009856760501861572,
+                "std": 0.0
+              },
+              "scheduled_episodes": 6,
+              "source_calls": 30,
+              "successful_episodes": 0
+            },
+            "cifar_patch_transformer_research__instance_1__seed_346057566515425261": {
+              "eligible_episodes": 2,
+              "episode_return": {
+                "count": 2,
+                "max": -0.244294216632843,
+                "mean": -0.2446129524707794,
+                "min": -0.2449316883087158,
+                "std": 0.00045076054482401167
+              },
+              "margin_reduction": {
+                "count": 2,
+                "max": -0.0008588433265686035,
+                "mean": -0.0009225904941558838,
+                "min": -0.000986337661743164,
+                "std": 9.015210896480234e-05
+              },
+              "scheduled_episodes": 6,
+              "source_calls": 54,
+              "successful_episodes": 0
+            },
+            "cifar_residual_cnn_research__instance_0__seed_3151851158866423633": {
+              "eligible_episodes": 4,
+              "episode_return": {
+                "count": 4,
+                "max": 1.9669974970817568,
+                "mean": 0.29764169991016387,
+                "min": -0.3157546722888947,
+                "std": 1.1137065415305403
+              },
+              "margin_reduction": {
+                "count": 4,
+                "max": 0.007399499416351318,
+                "mean": -0.0009716600179672241,
+                "min": -0.01515093445777893,
+                "std": 0.010130891516570071
+              },
+              "scheduled_episodes": 7,
+              "source_calls": 86,
+              "successful_episodes": 1
+            },
+            "cifar_residual_cnn_research__instance_1__seed_2163238385238607272": {
+              "eligible_episodes": 2,
+              "episode_return": {
+                "count": 2,
+                "max": -0.20715411543846132,
+                "mean": -0.2660290876030922,
+                "min": -0.3249040597677231,
+                "std": 0.08326178411955944
+              },
+              "margin_reduction": {
+                "count": 2,
+                "max": 0.006569176912307739,
+                "mean": -0.005205817520618439,
+                "min": -0.016980811953544617,
+                "std": 0.016652356823911894
+              },
+              "scheduled_episodes": 6,
+              "source_calls": 54,
+              "successful_episodes": 0
+            }
+          },
+          "ppo": {
+            "advantage_mean": 0.0032630853820592165,
+            "advantage_std": 0.3730951249599457,
+            "entropy": 4.555996894836426,
+            "loss": -0.16948845982551575,
+            "policy_loss": -0.2878212332725525,
+            "update_epochs": 4.0,
+            "value_loss": 0.3277854919433594
+          },
+          "trained_episodes": 9,
+          "unique_sample_count": 25
+        },
+        {
+          "episode_offset": 75,
+          "episodes": 25,
+          "family_diagnostics": {
+            "classical_cnn": {
+              "eligible_episodes": 4,
+              "episode_return": {
+                "count": 4,
+                "max": -0.19703920722007753,
+                "mean": -0.23133831821382048,
+                "min": -0.2862275743484497,
+                "std": 0.03930410485799742
+              },
+              "groupdro_loss": 0.23133831821382048,
+              "margin_reduction": {
+                "count": 4,
+                "max": 0.008592158555984497,
+                "mean": 0.0017323363572359085,
+                "min": -0.009245514869689941,
+                "std": 0.007860820971599488
+              },
+              "scheduled_episodes": 13,
+              "source_calls": 109,
+              "successful_episodes": 0,
+              "weight_after": 0.5011993009557965,
+              "weight_before": 0.5013944631752881
+            },
+            "transformer": {
+              "eligible_episodes": 4,
+              "episode_return": {
+                "count": 4,
+                "max": -0.2380824440717697,
+                "mean": -0.23914485961198806,
+                "min": -0.24009343028068542,
+                "std": 0.0009954473904009579
+              },
+              "groupdro_loss": 0.23914485961198806,
+              "margin_reduction": {
+                "count": 4,
+                "max": 0.00038351118564605713,
+                "mean": 0.00017102807760238647,
+                "min": -1.868605613708496e-05,
+                "std": 0.0001990894780801902
+              },
+              "scheduled_episodes": 12,
+              "source_calls": 108,
+              "successful_episodes": 0,
+              "weight_after": 0.4988006990442037,
+              "weight_before": 0.49860553682471204
+            }
+          },
+          "family_weights": {
+            "classical_cnn": 0.5011993009557965,
+            "transformer": 0.4988006990442037
+          },
+          "instance_diagnostics": {
+            "cifar_patch_transformer_research__instance_0__seed_3924142934676539415": {
+              "eligible_episodes": 2,
+              "episode_return": {
+                "count": 2,
+                "max": -0.2380824440717697,
+                "mean": -0.23908793717622756,
+                "min": -0.24009343028068542,
+                "std": 0.001421981985196926
+              },
+              "margin_reduction": {
+                "count": 2,
+                "max": 0.00038351118564605713,
+                "mean": 0.00018241256475448608,
+                "min": -1.868605613708496e-05,
+                "std": 0.0002843963970393852
+              },
+              "scheduled_episodes": 6,
+              "source_calls": 54,
+              "successful_episodes": 0
+            },
+            "cifar_patch_transformer_research__instance_1__seed_346057566515425261": {
+              "eligible_episodes": 2,
+              "episode_return": {
+                "count": 2,
+                "max": -0.23851703643798827,
+                "mean": -0.23920178204774856,
+                "min": -0.23988652765750887,
+                "std": 0.0009683765280984486
+              },
+              "margin_reduction": {
+                "count": 2,
+                "max": 0.00029659271240234375,
+                "mean": 0.00015964359045028687,
+                "min": 2.269446849822998e-05,
+                "std": 0.0001936753056196858
+              },
+              "scheduled_episodes": 6,
+              "source_calls": 54,
+              "successful_episodes": 0
+            },
+            "cifar_residual_cnn_research__instance_0__seed_3151851158866423633": {
+              "eligible_episodes": 1,
+              "episode_return": {
+                "count": 1,
+                "max": -0.21024506330490114,
+                "mean": -0.21024506330490114,
+                "min": -0.21024506330490114,
+                "std": 0.0
+              },
+              "margin_reduction": {
+                "count": 1,
+                "max": 0.005950987339019775,
+                "mean": 0.005950987339019775,
+                "min": 0.005950987339019775,
+                "std": 0.0
+              },
+              "scheduled_episodes": 6,
+              "source_calls": 30,
+              "successful_episodes": 0
+            },
+            "cifar_residual_cnn_research__instance_1__seed_2163238385238607272": {
+              "eligible_episodes": 3,
+              "episode_return": {
+                "count": 3,
+                "max": -0.19703920722007753,
+                "mean": -0.23836940318346023,
+                "min": -0.2862275743484497,
+                "std": 0.04495110736045241
+              },
+              "margin_reduction": {
+                "count": 3,
+                "max": 0.008592158555984497,
+                "mean": 0.0003261193633079529,
+                "min": -0.009245514869689941,
+                "std": 0.008990221472090484
+              },
+              "scheduled_episodes": 7,
+              "source_calls": 79,
+              "successful_episodes": 0
+            }
+          },
+          "ppo": {
+            "advantage_mean": 0.0007535098120570183,
+            "advantage_std": 0.07979085296392441,
+            "entropy": 4.553287982940674,
+            "loss": -0.05070296674966812,
+            "policy_loss": -0.008500220254063606,
+            "update_epochs": 4.0,
+            "value_loss": 0.006660259794443846
+          },
+          "trained_episodes": 8,
+          "unique_sample_count": 25
+        }
+      ],
+      "provenance": {
+        "config_digest": "8225f8dde0cbbab504feac4c62298cc1e83d91dcd5d2d14745342e65c0ac29c9",
+        "fingerprint": "1e7d0df7676ebcde235c9adc8741fa5f403314f500336b2740dd875392070520",
+        "split_digest": "73ccef8ffa8c2b3e3570150a7c76fb2c76f4c3a65353b573d51e474b5bed951c",
+        "victim_cache_digest": "8cb997150964fff9f384c191966587fc7046d4cc90787cc32fdd4696029fb5d5",
+        "victim_code_digest": "77b35052f8ff6e300e77944760f65a05c1cb842315de672809e62f82532418bf"
+      },
+      "runtime": {
+        "code_digest": "aa56aee9d252a6da97a5b19f9fd1b50d0fde0492b1829304a799cda1939fcbf1",
+        "determinism": "warn_only; some MPS operators may not have deterministic implementations",
+        "git_revision": "2eb481a34adc52f3faa5db9fcbd9d8e9e28e5f68",
+        "platform": "macOS-15.7.3-arm64-arm-64bit-Mach-O",
+        "torch": "2.13.0"
+      },
+      "seed": 7,
+      "source_families": [
+        "classical_cnn",
+        "transformer"
+      ],
+      "target_family": "modern_cnn",
+      "target_test_accuracy": 0.33,
+      "victim_accuracy_gate": {
+        "passed": false,
+        "thresholds": {
+          "classical_cnn": 0.6,
+          "modern_cnn": 0.5,
+          "transformer": 0.4
+        }
+      },
+      "victim_instances": {
+        "classical_cnn": [
+          {
+            "checkpoint_sha256": "30a248b2e708090fd84bda5f1890699c161c34acc1bd250b30488c5d36a811a4",
+            "instance_index": 0,
+            "resumed": true,
+            "source_validation_accuracy": 0.38,
+            "training_seed": 1758446201349190468,
+            "victim_id": "cifar_residual_cnn_research__instance_0__seed_3151851158866423633"
+          },
+          {
+            "checkpoint_sha256": "2fb2175ba0dae10aa90b3ec309ab10c724a370fcbb80fdaa563f172de384663c",
+            "instance_index": 1,
+            "resumed": false,
+            "source_validation_accuracy": 0.35333333333333333,
+            "training_seed": 3559838757678245276,
+            "victim_id": "cifar_residual_cnn_research__instance_1__seed_2163238385238607272"
+          }
+        ],
+        "modern_cnn": [
+          {
+            "checkpoint_sha256": "d4f4f61d3602a5787ca4547a0d4b76505d97024962104e9bf49d41bad779546d",
+            "instance_index": 0,
+            "resumed": true,
+            "source_validation_accuracy": 0.2833333333333333,
+            "training_seed": 4178107079568402244,
+            "victim_id": "cifar_depthwise_cnn_research__instance_0__seed_1234977392695825399"
+          }
+        ],
+        "transformer": [
+          {
+            "checkpoint_sha256": "346585dd047dafba408034d5ba79d7b5de743f90021b1ea895ea2d77b9379697",
+            "instance_index": 0,
+            "resumed": true,
+            "source_validation_accuracy": 0.2633333333333333,
+            "training_seed": 4459260701486946382,
+            "victim_id": "cifar_patch_transformer_research__instance_0__seed_3924142934676539415"
+          },
+          {
+            "checkpoint_sha256": "14cf990379d62167e0fa9bf1b9c310bbd43eb85927e743601a4a4200b76e22d0",
+            "instance_index": 1,
+            "resumed": true,
+            "source_validation_accuracy": 0.25666666666666665,
+            "training_seed": 7953033452088705983,
+            "victim_id": "cifar_patch_transformer_research__instance_1__seed_346057566515425261"
+          }
+        ]
+      }
+    },
+    {
+      "elapsed_seconds": 51.258571666898206,
+      "evaluation": {
+        "bandit_action": {
+          "asr_at_budgets": {
+            "0": 0.0,
+            "10": 0.02857142857142857,
+            "25": 0.02857142857142857,
+            "5": 0.02857142857142857
+          },
+          "asr_query_auc": 0.02571428571428571,
+          "eligible": 35,
+          "eligible_sample_ids_sha256": "cf2c895a4910257839af795da1a8a5e3111b58b73824ab7db5dcb5620c4b9c2a",
+          "frozen": true,
+          "initialization_included": true,
+          "max_total_target_calls": 25,
+          "normalized_action_entropy": 0.9408304688003167,
+          "policy_digest_after": "09f2395f4d425bbab6285bb0f540ab0ae4e90ff5b170d1c3c2da60e7ecf9001d",
+          "policy_digest_before": "09f2395f4d425bbab6285bb0f540ab0ae4e90ff5b170d1c3c2da60e7ecf9001d",
+          "query_budget": 25,
+          "successes": 1
+        },
+        "fixed_action": {
+          "asr_at_budgets": {
+            "0": 0.0,
+            "10": 0.0,
+            "25": 0.0,
+            "5": 0.0
+          },
+          "asr_query_auc": 0.0,
+          "eligible": 35,
+          "eligible_sample_ids_sha256": "cf2c895a4910257839af795da1a8a5e3111b58b73824ab7db5dcb5620c4b9c2a",
+          "frozen": true,
+          "initialization_included": true,
+          "max_total_target_calls": 25,
+          "normalized_action_entropy": -0.0,
+          "policy_digest_after": "90371dccedf2bff1d42f3aaba4ad31d26577e656af56a3c22e39df1df878dce0",
+          "policy_digest_before": "90371dccedf2bff1d42f3aaba4ad31d26577e656af56a3c22e39df1df878dce0",
+          "query_budget": 25,
+          "successes": 0
+        },
+        "groupdro_recurrent_ppo": {
+          "asr_at_budgets": {
+            "0": 0.0,
+            "10": 0.02857142857142857,
+            "25": 0.02857142857142857,
+            "5": 0.02857142857142857
+          },
+          "asr_query_auc": 0.02571428571428571,
+          "eligible": 35,
+          "eligible_sample_ids_sha256": "cf2c895a4910257839af795da1a8a5e3111b58b73824ab7db5dcb5620c4b9c2a",
+          "frozen": true,
+          "initialization_included": true,
+          "max_total_target_calls": 25,
+          "normalized_action_entropy": 0.038642724943205364,
+          "policy_digest_after": "6791406cc70a51bbca91af075f750155b37cdbe333e888ea65cf59b0421e17e2",
+          "policy_digest_before": "6791406cc70a51bbca91af075f750155b37cdbe333e888ea65cf59b0421e17e2",
+          "query_budget": 25,
+          "successes": 1
+        },
+        "groupdro_recurrent_ppo_stochastic": {
+          "asr_at_budgets": {
+            "0": 0.0,
+            "10": 0.02857142857142857,
+            "25": 0.02857142857142857,
+            "5": 0.02857142857142857
+          },
+          "asr_query_auc": 0.02571428571428571,
+          "eligible": 35,
+          "eligible_sample_ids_sha256": "cf2c895a4910257839af795da1a8a5e3111b58b73824ab7db5dcb5620c4b9c2a",
+          "frozen": true,
+          "initialization_included": true,
+          "max_total_target_calls": 25,
+          "normalized_action_entropy": 0.9849813813123938,
+          "policy_digest_after": "6791406cc70a51bbca91af075f750155b37cdbe333e888ea65cf59b0421e17e2",
+          "policy_digest_before": "6791406cc70a51bbca91af075f750155b37cdbe333e888ea65cf59b0421e17e2",
+          "query_budget": 25,
+          "successes": 1
+        },
+        "random_action": {
+          "asr_at_budgets": {
+            "0": 0.0,
+            "10": 0.0,
+            "25": 0.02857142857142857,
+            "5": 0.0
+          },
+          "asr_query_auc": 0.00857142857142857,
+          "eligible": 35,
+          "eligible_sample_ids_sha256": "cf2c895a4910257839af795da1a8a5e3111b58b73824ab7db5dcb5620c4b9c2a",
+          "frozen": true,
+          "initialization_included": true,
+          "max_total_target_calls": 25,
+          "normalized_action_entropy": 0.9868318864283303,
+          "policy_digest_after": "f0770a438d4f20952ed088d606c126a08f2df8a7f8fb84feb7e6aa901c85895c",
+          "policy_digest_before": "f0770a438d4f20952ed088d606c126a08f2df8a7f8fb84feb7e6aa901c85895c",
+          "query_budget": 25,
+          "successes": 1
+        },
+        "score_greedy": {
+          "asr_at_budgets": {
+            "0": 0.0,
+            "10": 0.14285714285714285,
+            "25": 0.2857142857142857,
+            "5": 0.02857142857142857
+          },
+          "asr_query_auc": 0.14857142857142855,
+          "eligible": 35,
+          "eligible_sample_ids_sha256": "cf2c895a4910257839af795da1a8a5e3111b58b73824ab7db5dcb5620c4b9c2a",
+          "frozen": true,
+          "initialization_included": true,
+          "max_total_target_calls": 25,
+          "normalized_action_entropy": 0.9878854399116234,
+          "policy_digest_after": "034c1983a78b021121c6ea4d79306042c1b81b4f8dfe1e0380e141e039c22cdb",
+          "policy_digest_before": "034c1983a78b021121c6ea4d79306042c1b81b4f8dfe1e0380e141e039c22cdb",
+          "query_budget": 25,
+          "successes": 10
+        }
+      },
+      "policy_checkpoint_sha256": "05012e6e8f988048fc728055de944e0f783b2d19b35c44efb58a607ecd337827",
+      "policy_training": {
+        "episodes": 100,
+        "final_family_weights": {
+          "classical_cnn": 0.4897845655567157,
+          "modern_cnn": 0.5102154344432841
+        },
+        "policy_sample_pool_size": 200,
+        "source_calls": 942,
+        "source_calls_by_family": {
+          "classical_cnn": 558,
+          "modern_cnn": 384
+        },
+        "source_calls_by_victim": {
+          "cifar_depthwise_cnn_research__instance_0__seed_1234977392695825399": 216,
+          "cifar_depthwise_cnn_research__instance_1__seed_6328650363430726259": 168,
+          "cifar_residual_cnn_research__instance_0__seed_3151851158866423633": 196,
+          "cifar_residual_cnn_research__instance_1__seed_2163238385238607272": 362
+        },
+        "trained_episodes": 36,
+        "unique_policy_samples_visited": 100
+      },
+      "policy_training_blocks": [
+        {
+          "episode_offset": 0,
+          "episodes": 25,
+          "family_diagnostics": {
+            "classical_cnn": {
+              "eligible_episodes": 7,
+              "episode_return": {
+                "count": 7,
+                "max": -0.16791153490543367,
+                "mean": -0.21176484337874824,
+                "min": -0.25728415489196776,
+                "std": 0.03148536492759322
+              },
+              "groupdro_loss": 0.21176484337874824,
+              "margin_reduction": {
+                "count": 7,
+                "max": 0.014417693018913269,
+                "mean": 0.005647031324250358,
+                "min": -0.0034568309783935547,
+                "std": 0.006297072985518646
+              },
+              "scheduled_episodes": 13,
+              "source_calls": 181,
+              "successful_episodes": 0,
+              "weight_after": 0.4995331401918646,
+              "weight_before": 0.5
+            },
+            "modern_cnn": {
+              "eligible_episodes": 6,
+              "episode_return": {
+                "count": 6,
+                "max": -0.20549427509307863,
+                "mean": -0.23043924113114678,
+                "min": -0.26993762493133544,
+                "std": 0.023305214459612644
+              },
+              "groupdro_loss": 0.23043924113114678,
+              "margin_reduction": {
+                "count": 6,
+                "max": 0.006901144981384277,
+                "mean": 0.0019121517737706502,
+                "min": -0.00598752498626709,
+                "std": 0.00466104289192253
+              },
+              "scheduled_episodes": 12,
+              "source_calls": 156,
+              "successful_episodes": 0,
+              "weight_after": 0.5004668598081353,
+              "weight_before": 0.5
+            }
+          },
+          "family_weights": {
+            "classical_cnn": 0.4995331401918646,
+            "modern_cnn": 0.5004668598081353
+          },
+          "instance_diagnostics": {
+            "cifar_depthwise_cnn_research__instance_0__seed_1234977392695825399": {
+              "eligible_episodes": 3,
+              "episode_return": {
+                "count": 3,
+                "max": -0.20549427509307863,
+                "mean": -0.21848759094874068,
+                "min": -0.2394800239801407,
+                "std": 0.018350672700121935
+              },
+              "margin_reduction": {
+                "count": 3,
+                "max": 0.006901144981384277,
+                "mean": 0.004302481810251872,
+                "min": 0.00010399520397186279,
+                "std": 0.003670134540024387
+              },
+              "scheduled_episodes": 6,
+              "source_calls": 78,
+              "successful_episodes": 0
+            },
+            "cifar_depthwise_cnn_research__instance_1__seed_6328650363430726259": {
+              "eligible_episodes": 3,
+              "episode_return": {
+                "count": 3,
+                "max": -0.22377576470375063,
+                "mean": -0.24239089131355285,
+                "min": -0.26993762493133544,
+                "std": 0.02434254583494754
+              },
+              "margin_reduction": {
+                "count": 3,
+                "max": 0.003244847059249878,
+                "mean": -0.0004781782627105713,
+                "min": -0.00598752498626709,
+                "std": 0.004868509166989511
+              },
+              "scheduled_episodes": 6,
+              "source_calls": 78,
+              "successful_episodes": 0
+            },
+            "cifar_residual_cnn_research__instance_0__seed_3151851158866423633": {
+              "eligible_episodes": 3,
+              "episode_return": {
+                "count": 3,
+                "max": -0.17694841861724855,
+                "mean": -0.22415452738602956,
+                "min": -0.25728415489196776,
+                "std": 0.04197699517899873
+              },
+              "margin_reduction": {
+                "count": 3,
+                "max": 0.012610316276550293,
+                "mean": 0.003169094522794088,
+                "min": -0.0034568309783935547,
+                "std": 0.008395399035799748
+              },
+              "scheduled_episodes": 7,
+              "source_calls": 79,
+              "successful_episodes": 0
+            },
+            "cifar_residual_cnn_research__instance_1__seed_2163238385238607272": {
+              "eligible_episodes": 4,
+              "episode_return": {
+                "count": 4,
+                "max": -0.16791153490543367,
+                "mean": -0.20247258037328722,
+                "min": -0.21800767421722414,
+                "std": 0.023223088818210294
+              },
+              "margin_reduction": {
+                "count": 4,
+                "max": 0.014417693018913269,
+                "mean": 0.00750548392534256,
+                "min": 0.004398465156555176,
+                "std": 0.004644617763642059
+              },
+              "scheduled_episodes": 6,
+              "source_calls": 102,
+              "successful_episodes": 0
+            }
+          },
+          "ppo": {
+            "advantage_mean": -0.08303491771221161,
+            "advantage_std": 0.07505021244287491,
+            "entropy": 4.559643745422363,
+            "loss": -0.05238570645451546,
+            "policy_loss": -0.009857803583145142,
+            "update_epochs": 4.0,
+            "value_loss": 0.006137068383395672
+          },
+          "trained_episodes": 13,
+          "unique_sample_count": 25
+        },
+        {
+          "episode_offset": 25,
+          "episodes": 25,
+          "family_diagnostics": {
+            "classical_cnn": {
+              "eligible_episodes": 5,
+              "episode_return": {
+                "count": 5,
+                "max": -0.1341050469875336,
+                "mean": -0.22862113058567052,
+                "min": -0.34882459580898284,
+                "std": 0.07737949089364929
+              },
+              "groupdro_loss": 0.22862113058567052,
+              "margin_reduction": {
+                "count": 5,
+                "max": 0.021178990602493286,
+                "mean": 0.002275773882865906,
+                "min": -0.02176491916179657,
+                "std": 0.01547589817872986
+              },
+              "scheduled_episodes": 13,
+              "source_calls": 133,
+              "successful_episodes": 0,
+              "weight_after": 0.4993078772851397,
+              "weight_before": 0.4995331401918646
+            },
+            "modern_cnn": {
+              "eligible_episodes": 3,
+              "episode_return": {
+                "count": 3,
+                "max": -0.20844395995140078,
+                "mean": -0.23763165911038717,
+                "min": -0.2632848525047302,
+                "std": 0.027590766974871846
+              },
+              "groupdro_loss": 0.23763165911038717,
+              "margin_reduction": {
+                "count": 3,
+                "max": 0.006311208009719849,
+                "mean": 0.0004736681779225667,
+                "min": -0.004656970500946045,
+                "std": 0.005518153394974372
+              },
+              "scheduled_episodes": 12,
+              "source_calls": 84,
+              "successful_episodes": 0,
+              "weight_after": 0.5006921227148604,
+              "weight_before": 0.5004668598081353
+            }
+          },
+          "family_weights": {
+            "classical_cnn": 0.4993078772851397,
+            "modern_cnn": 0.5006921227148604
+          },
+          "instance_diagnostics": {
+            "cifar_depthwise_cnn_research__instance_0__seed_1234977392695825399": {
+              "eligible_episodes": 2,
+              "episode_return": {
+                "count": 2,
+                "max": -0.20844395995140078,
+                "mean": -0.23586440622806548,
+                "min": -0.2632848525047302,
+                "std": 0.038778367010782085
+              },
+              "margin_reduction": {
+                "count": 2,
+                "max": 0.006311208009719849,
+                "mean": 0.0008271187543869019,
+                "min": -0.004656970500946045,
+                "std": 0.00775567340215642
+              },
+              "scheduled_episodes": 6,
+              "source_calls": 54,
+              "successful_episodes": 0
+            },
+            "cifar_depthwise_cnn_research__instance_1__seed_6328650363430726259": {
+              "eligible_episodes": 1,
+              "episode_return": {
+                "count": 1,
+                "max": -0.24116616487503054,
+                "mean": -0.24116616487503054,
+                "min": -0.24116616487503054,
+                "std": 0.0
+              },
+              "margin_reduction": {
+                "count": 1,
+                "max": -0.00023323297500610352,
+                "mean": -0.00023323297500610352,
+                "min": -0.00023323297500610352,
+                "std": 0.0
+              },
+              "scheduled_episodes": 6,
+              "source_calls": 30,
+              "successful_episodes": 0
+            },
+            "cifar_residual_cnn_research__instance_0__seed_3151851158866423633": {
+              "eligible_episodes": 0,
+              "episode_return": {
+                "count": 0,
+                "max": null,
+                "mean": null,
+                "min": null,
+                "std": null
+              },
+              "margin_reduction": {
+                "count": 0,
+                "max": null,
+                "mean": null,
+                "min": null,
+                "std": null
+              },
+              "scheduled_episodes": 6,
+              "source_calls": 6,
+              "successful_episodes": 0
+            },
+            "cifar_residual_cnn_research__instance_1__seed_2163238385238607272": {
+              "eligible_episodes": 5,
+              "episode_return": {
+                "count": 5,
+                "max": -0.1341050469875336,
+                "mean": -0.22862113058567052,
+                "min": -0.34882459580898284,
+                "std": 0.07737949089364929
+              },
+              "margin_reduction": {
+                "count": 5,
+                "max": 0.021178990602493286,
+                "mean": 0.002275773882865906,
+                "min": -0.02176491916179657,
+                "std": 0.01547589817872986
+              },
+              "scheduled_episodes": 7,
+              "source_calls": 127,
+              "successful_episodes": 0
+            }
+          },
+          "ppo": {
+            "advantage_mean": 0.023181647062301636,
+            "advantage_std": 0.08014799654483795,
+            "entropy": 4.558902740478516,
+            "loss": -0.056887537240982056,
+            "policy_loss": -0.013347591273486614,
+            "update_epochs": 4.0,
+            "value_loss": 0.004098159726709127
+          },
+          "trained_episodes": 8,
+          "unique_sample_count": 25
+        },
+        {
+          "episode_offset": 50,
+          "episodes": 25,
+          "family_diagnostics": {
+            "classical_cnn": {
+              "eligible_episodes": 6,
+              "episode_return": {
+                "count": 6,
+                "max": 2.0173928993940358,
+                "mean": 0.14719052592913315,
+                "min": -0.26667985856533055,
+                "std": 0.9169566869819556
+              },
+              "groupdro_loss": -0.14719052592913315,
+              "margin_reduction": {
+                "count": 6,
+                "max": 0.01281118392944336,
+                "mean": 0.0034381051858266196,
+                "min": -0.005335971713066101,
+                "std": 0.00766774585935337
+              },
+              "scheduled_episodes": 13,
+              "source_calls": 135,
+              "successful_episodes": 1,
+              "weight_after": 0.48989465176754454,
+              "weight_before": 0.4993078772851397
+            },
+            "modern_cnn": {
+              "eligible_episodes": 3,
+              "episode_return": {
+                "count": 3,
+                "max": -0.22233415186405184,
+                "mean": -0.22939352730909987,
+                "min": -0.24282078981399538,
+                "std": 0.011633489280015983
+              },
+              "groupdro_loss": 0.22939352730909987,
+              "margin_reduction": {
+                "count": 3,
+                "max": 0.0035331696271896362,
+                "mean": 0.0021212945381800332,
+                "min": -0.0005641579627990723,
+                "std": 0.0023266978560031967
+              },
+              "scheduled_episodes": 12,
+              "source_calls": 84,
+              "successful_episodes": 0,
+              "weight_after": 0.5101053482324553,
+              "weight_before": 0.5006921227148604
+            }
+          },
+          "family_weights": {
+            "classical_cnn": 0.48989465176754454,
+            "modern_cnn": 0.5101053482324553
+          },
+          "instance_diagnostics": {
+            "cifar_depthwise_cnn_research__instance_0__seed_1234977392695825399": {
+              "eligible_episodes": 2,
+              "episode_return": {
+                "count": 2,
+                "max": -0.22233415186405184,
+                "mean": -0.2325774708390236,
+                "min": -0.24282078981399538,
+                "std": 0.01448624061811875
+              },
+              "margin_reduction": {
+                "count": 2,
+                "max": 0.0035331696271896362,
+                "mean": 0.001484505832195282,
+                "min": -0.0005641579627990723,
+                "std": 0.00289724812362375
+              },
+              "scheduled_episodes": 6,
+              "source_calls": 54,
+              "successful_episodes": 0
+            },
+            "cifar_depthwise_cnn_research__instance_1__seed_6328650363430726259": {
+              "eligible_episodes": 1,
+              "episode_return": {
+                "count": 1,
+                "max": -0.22302564024925234,
+                "mean": -0.22302564024925234,
+                "min": -0.22302564024925234,
+                "std": 0.0
+              },
+              "margin_reduction": {
+                "count": 1,
+                "max": 0.003394871950149536,
+                "mean": 0.003394871950149536,
+                "min": 0.003394871950149536,
+                "std": 0.0
+              },
+              "scheduled_episodes": 6,
+              "source_calls": 30,
+              "successful_episodes": 0
+            },
+            "cifar_residual_cnn_research__instance_0__seed_3151851158866423633": {
+              "eligible_episodes": 4,
+              "episode_return": {
+                "count": 4,
+                "max": 2.0173928993940358,
+                "mean": 0.35361919045448315,
+                "min": -0.23464474618434908,
+                "std": 1.109458164148807
+              },
+              "margin_reduction": {
+                "count": 4,
+                "max": 0.01281118392944336,
+                "mean": 0.0077238380908966064,
+                "min": 0.001071050763130188,
+                "std": 0.0049490555297075625
+              },
+              "scheduled_episodes": 7,
+              "source_calls": 81,
+              "successful_episodes": 1
+            },
+            "cifar_residual_cnn_research__instance_1__seed_2163238385238607272": {
+              "eligible_episodes": 2,
+              "episode_return": {
+                "count": 2,
+                "max": -0.26465374767780303,
+                "mean": -0.26566680312156676,
+                "min": -0.26667985856533055,
+                "std": 0.0014326767480066047
+              },
+              "margin_reduction": {
+                "count": 2,
+                "max": -0.004930749535560608,
+                "mean": -0.0051333606243133545,
+                "min": -0.005335971713066101,
+                "std": 0.0002865353496013131
+              },
+              "scheduled_episodes": 6,
+              "source_calls": 54,
+              "successful_episodes": 0
+            }
+          },
+          "ppo": {
+            "advantage_mean": 0.020733261480927467,
+            "advantage_std": 0.21577312052249908,
+            "entropy": 4.557688236236572,
+            "loss": -0.6138113737106323,
+            "policy_loss": -0.7423914670944214,
+            "update_epochs": 4.0,
+            "value_loss": 0.3483138978481293
+          },
+          "trained_episodes": 9,
+          "unique_sample_count": 25
+        },
+        {
+          "episode_offset": 75,
+          "episodes": 25,
+          "family_diagnostics": {
+            "classical_cnn": {
+              "eligible_episodes": 4,
+              "episode_return": {
+                "count": 4,
+                "max": -0.22856160789728167,
+                "mean": -0.2533092701435089,
+                "min": -0.2803902679681778,
+                "std": 0.026912356635901555
+              },
+              "groupdro_loss": 0.2533092701435089,
+              "margin_reduction": {
+                "count": 4,
+                "max": 0.0022876784205436707,
+                "mean": -0.0026618540287017822,
+                "min": -0.008078053593635559,
+                "std": 0.005382471327180314
+              },
+              "scheduled_episodes": 13,
+              "source_calls": 109,
+              "successful_episodes": 0,
+              "weight_after": 0.4897845655567157,
+              "weight_before": 0.48989465176754454
+            },
+            "modern_cnn": {
+              "eligible_episodes": 2,
+              "episode_return": {
+                "count": 2,
+                "max": -0.20944554150104525,
+                "mean": -0.25771453768014907,
+                "min": -0.3059835338592529,
+                "std": 0.06826266903862376
+              },
+              "groupdro_loss": 0.25771453768014907,
+              "margin_reduction": {
+                "count": 2,
+                "max": 0.006110891699790955,
+                "mean": -0.0035429075360298157,
+                "min": -0.013196706771850586,
+                "std": 0.013652533807724755
+              },
+              "scheduled_episodes": 12,
+              "source_calls": 60,
+              "successful_episodes": 0,
+              "weight_after": 0.5102154344432841,
+              "weight_before": 0.5101053482324553
+            }
+          },
+          "family_weights": {
+            "classical_cnn": 0.4897845655567157,
+            "modern_cnn": 0.5102154344432841
+          },
+          "instance_diagnostics": {
+            "cifar_depthwise_cnn_research__instance_0__seed_1234977392695825399": {
+              "eligible_episodes": 1,
+              "episode_return": {
+                "count": 1,
+                "max": -0.20944554150104525,
+                "mean": -0.20944554150104525,
+                "min": -0.20944554150104525,
+                "std": 0.0
+              },
+              "margin_reduction": {
+                "count": 1,
+                "max": 0.006110891699790955,
+                "mean": 0.006110891699790955,
+                "min": 0.006110891699790955,
+                "std": 0.0
+              },
+              "scheduled_episodes": 6,
+              "source_calls": 30,
+              "successful_episodes": 0
+            },
+            "cifar_depthwise_cnn_research__instance_1__seed_6328650363430726259": {
+              "eligible_episodes": 1,
+              "episode_return": {
+                "count": 1,
+                "max": -0.3059835338592529,
+                "mean": -0.3059835338592529,
+                "min": -0.3059835338592529,
+                "std": 0.0
+              },
+              "margin_reduction": {
+                "count": 1,
+                "max": -0.013196706771850586,
+                "mean": -0.013196706771850586,
+                "min": -0.013196706771850586,
+                "std": 0.0
+              },
+              "scheduled_episodes": 6,
+              "source_calls": 30,
+              "successful_episodes": 0
+            },
+            "cifar_residual_cnn_research__instance_0__seed_3151851158866423633": {
+              "eligible_episodes": 1,
+              "episode_return": {
+                "count": 1,
+                "max": -0.22856160789728167,
+                "mean": -0.22856160789728167,
+                "min": -0.22856160789728167,
+                "std": 0.0
+              },
+              "margin_reduction": {
+                "count": 1,
+                "max": 0.0022876784205436707,
+                "mean": 0.0022876784205436707,
+                "min": 0.0022876784205436707,
+                "std": 0.0
+              },
+              "scheduled_episodes": 6,
+              "source_calls": 30,
+              "successful_episodes": 0
+            },
+            "cifar_residual_cnn_research__instance_1__seed_2163238385238607272": {
+              "eligible_episodes": 3,
+              "episode_return": {
+                "count": 3,
+                "max": -0.2318414279818535,
+                "mean": -0.2615584908922513,
+                "min": -0.2803902679681778,
+                "std": 0.026040632706945455
+              },
+              "margin_reduction": {
+                "count": 3,
+                "max": 0.001631714403629303,
+                "mean": -0.004311698178450267,
+                "min": -0.008078053593635559,
+                "std": 0.005208126541389094
+              },
+              "scheduled_episodes": 7,
+              "source_calls": 79,
+              "successful_episodes": 0
+            }
+          },
+          "ppo": {
+            "advantage_mean": -0.04792072996497154,
+            "advantage_std": 0.055854618549346924,
+            "entropy": 4.55546236038208,
+            "loss": 0.0035527385771274567,
+            "policy_loss": 0.046010397374629974,
+            "update_epochs": 4.0,
+            "value_loss": 0.00619393028318882
+          },
+          "trained_episodes": 6,
+          "unique_sample_count": 25
+        }
+      ],
+      "provenance": {
+        "config_digest": "1ffa89d2d43c8282f46efef721dd5dd5ed52048d053b81b01cedf0aec2e6f358",
+        "fingerprint": "e3226f82ae531e9d690717dc728c330fa09bb92dfcfe657b02441dcecf097478",
+        "split_digest": "73ccef8ffa8c2b3e3570150a7c76fb2c76f4c3a65353b573d51e474b5bed951c",
+        "victim_cache_digest": "8cb997150964fff9f384c191966587fc7046d4cc90787cc32fdd4696029fb5d5",
+        "victim_code_digest": "77b35052f8ff6e300e77944760f65a05c1cb842315de672809e62f82532418bf"
+      },
+      "runtime": {
+        "code_digest": "aa56aee9d252a6da97a5b19f9fd1b50d0fde0492b1829304a799cda1939fcbf1",
+        "determinism": "warn_only; some MPS operators may not have deterministic implementations",
+        "git_revision": "2eb481a34adc52f3faa5db9fcbd9d8e9e28e5f68",
+        "platform": "macOS-15.7.3-arm64-arm-64bit-Mach-O",
+        "torch": "2.13.0"
+      },
+      "seed": 7,
+      "source_families": [
+        "classical_cnn",
+        "modern_cnn"
+      ],
+      "target_family": "transformer",
+      "target_test_accuracy": 0.35,
+      "victim_accuracy_gate": {
+        "passed": false,
+        "thresholds": {
+          "classical_cnn": 0.6,
+          "modern_cnn": 0.5,
+          "transformer": 0.4
+        }
+      },
+      "victim_instances": {
+        "classical_cnn": [
+          {
+            "checkpoint_sha256": "30a248b2e708090fd84bda5f1890699c161c34acc1bd250b30488c5d36a811a4",
+            "instance_index": 0,
+            "resumed": true,
+            "source_validation_accuracy": 0.38,
+            "training_seed": 1758446201349190468,
+            "victim_id": "cifar_residual_cnn_research__instance_0__seed_3151851158866423633"
+          },
+          {
+            "checkpoint_sha256": "2fb2175ba0dae10aa90b3ec309ab10c724a370fcbb80fdaa563f172de384663c",
+            "instance_index": 1,
+            "resumed": true,
+            "source_validation_accuracy": 0.35333333333333333,
+            "training_seed": 3559838757678245276,
+            "victim_id": "cifar_residual_cnn_research__instance_1__seed_2163238385238607272"
+          }
+        ],
+        "modern_cnn": [
+          {
+            "checkpoint_sha256": "d4f4f61d3602a5787ca4547a0d4b76505d97024962104e9bf49d41bad779546d",
+            "instance_index": 0,
+            "resumed": true,
+            "source_validation_accuracy": 0.2833333333333333,
+            "training_seed": 4178107079568402244,
+            "victim_id": "cifar_depthwise_cnn_research__instance_0__seed_1234977392695825399"
+          },
+          {
+            "checkpoint_sha256": "5538ff6d050764e3451510a64cc8b39741f1a4b330ecf7b51ae14e7ed94fe56d",
+            "instance_index": 1,
+            "resumed": true,
+            "source_validation_accuracy": 0.2866666666666667,
+            "training_seed": 1085506259032369615,
+            "victim_id": "cifar_depthwise_cnn_research__instance_1__seed_6328650363430726259"
+          }
+        ],
+        "transformer": [
+          {
+            "checkpoint_sha256": "346585dd047dafba408034d5ba79d7b5de743f90021b1ea895ea2d77b9379697",
+            "instance_index": 0,
+            "resumed": true,
+            "source_validation_accuracy": 0.2633333333333333,
+            "training_seed": 4459260701486946382,
+            "victim_id": "cifar_patch_transformer_research__instance_0__seed_3924142934676539415"
+          }
+        ]
+      }
+    }
+  ],
+  "schema_version": 1,
+  "source_summary_verified": true,
+  "status": "complete",
+  "study_code_digest": "aa56aee9d252a6da97a5b19f9fd1b50d0fde0492b1829304a799cda1939fcbf1"
+}

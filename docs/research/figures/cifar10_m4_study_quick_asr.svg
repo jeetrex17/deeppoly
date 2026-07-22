@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="590" viewBox="0 0 1000 590" role="img">
+<style>text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}.title{fill:#eef4ff;font-size:27px;font-weight:700}.subtitle{fill:#aebbd3;font-size:15px}.label{fill:#eef4ff;font-size:14px}.small{fill:#aebbd3;font-size:12px}</style>
+<rect width="100%" height="100%" fill="#0b1020"/>
+<text class="title" x="55" y="55">CIFAR-10 frozen transfer ASR by target family</text>
+<text class="subtitle" x="55" y="83">1 seed(s); 3 family/seed runs; mean held-out-target ASR.</text>
+<line x1="95" y1="470.0" x2="945" y2="470.0" stroke="#31415f"/>
+<text class="small" x="83" y="474.0" text-anchor="end">0%</text>
+<line x1="95" y1="401.0" x2="945" y2="401.0" stroke="#31415f"/>
+<text class="small" x="83" y="405.0" text-anchor="end">6%</text>
+<line x1="95" y1="332.0" x2="945" y2="332.0" stroke="#31415f"/>
+<text class="small" x="83" y="336.0" text-anchor="end">12%</text>
+<line x1="95" y1="263.0" x2="945" y2="263.0" stroke="#31415f"/>
+<text class="small" x="83" y="267.0" text-anchor="end">18%</text>
+<line x1="95" y1="194.0" x2="945" y2="194.0" stroke="#31415f"/>
+<text class="small" x="83" y="198.0" text-anchor="end">24%</text>
+<line x1="95" y1="125.0" x2="945" y2="125.0" stroke="#31415f"/>
+<text class="small" x="83" y="129.0" text-anchor="end">30%</text>
+<rect x="144.5" y="444.4" width="40.3" height="25.6" rx="5" fill="#54d6a0"/>
+<text class="small" x="164.7" y="436.4" text-anchor="middle">2.2%</text>
+<rect x="192.5" y="444.4" width="40.3" height="25.6" rx="5" fill="#ffb85c"/>
+<text class="small" x="212.7" y="436.4" text-anchor="middle">2.2%</text>
+<rect x="240.5" y="470.0" width="40.3" height="0.0" rx="5" fill="#63d5ff"/>
+<text class="small" x="260.7" y="462.0" text-anchor="middle">0.0%</text>
+<rect x="288.5" y="240.0" width="40.3" height="230.0" rx="5" fill="#c790ff"/>
+<text class="small" x="308.7" y="232.0" text-anchor="middle">20.0%</text>
+<text class="label" x="236.7" y="505" text-anchor="middle">Classical Cnn</text>
+<rect x="427.8" y="470.0" width="40.3" height="0.0" rx="5" fill="#54d6a0"/>
+<text class="small" x="448.0" y="462.0" text-anchor="middle">0.0%</text>
+<rect x="475.8" y="470.0" width="40.3" height="0.0" rx="5" fill="#ffb85c"/>
+<text class="small" x="496.0" y="462.0" text-anchor="middle">0.0%</text>
+<rect x="523.8" y="400.3" width="40.3" height="69.7" rx="5" fill="#63d5ff"/>
+<text class="small" x="544.0" y="392.3" text-anchor="middle">6.1%</text>
+<rect x="571.8" y="295.8" width="40.3" height="174.2" rx="5" fill="#c790ff"/>
+<text class="small" x="592.0" y="287.8" text-anchor="middle">15.2%</text>
+<text class="label" x="520.0" y="505" text-anchor="middle">Modern Cnn</text>
+<rect x="711.2" y="437.1" width="40.3" height="32.9" rx="5" fill="#54d6a0"/>
+<text class="small" x="731.3" y="429.1" text-anchor="middle">2.9%</text>
+<rect x="759.2" y="437.1" width="40.3" height="32.9" rx="5" fill="#ffb85c"/>
+<text class="small" x="779.3" y="429.1" text-anchor="middle">2.9%</text>
+<rect x="807.2" y="437.1" width="40.3" height="32.9" rx="5" fill="#63d5ff"/>
+<text class="small" x="827.3" y="429.1" text-anchor="middle">2.9%</text>
+<rect x="855.2" y="141.4" width="40.3" height="328.6" rx="5" fill="#c790ff"/>
+<text class="small" x="875.3" y="133.4" text-anchor="middle">28.6%</text>
+<text class="label" x="803.3" y="505" text-anchor="middle">Transformer</text>
+<rect x="75" y="535" width="14" height="14" rx="3" fill="#54d6a0"/>
+<text class="small" x="97" y="547">RL stochastic</text>
+<rect x="295" y="535" width="14" height="14" rx="3" fill="#ffb85c"/>
+<text class="small" x="317" y="547">Random</text>
+<rect x="515" y="535" width="14" height="14" rx="3" fill="#63d5ff"/>
+<text class="small" x="537" y="547">Score bandit</text>
+<rect x="735" y="535" width="14" height="14" rx="3" fill="#c790ff"/>
+<text class="small" x="757" y="547">Score greedy</text>
+</svg>

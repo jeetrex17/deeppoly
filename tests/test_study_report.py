@@ -89,6 +89,7 @@ class StudyReportTests(unittest.TestCase):
             self.assertIn("Victim gate", outputs["markdown"].read_text())
             self.assertIn("Score greedy", outputs["markdown"].read_text())
             self.assertNotIn("deliberately short victim fitting", outputs["markdown"].read_text())
+            self.assertIn("Across-seed mean ASR", outputs["markdown"].read_text())
 
     def test_report_recomputes_summary_and_sanitizes_output_stem(self) -> None:
         evaluation = {
