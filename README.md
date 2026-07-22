@@ -1,71 +1,126 @@
-# DeepPoly
+# DeepPoly & RL Attack Transferability
 
-Adversarial robustness certification for neural networks using the DeepPoly abstract domain (Singh et al., POPL 2019).
+Research code for two related robustness directions:
 
-This repo implements two approaches: **certified training** (DeepPoly bound propagation) and **adversarial game training** (PGD + DeepPoly verification). Also includes research on attack transferability, speech attacks, and zero-knowledge proof integration for certification.
+- **Certified robustness:** DeepPoly bound propagation and adversarial-game training for neural networks.
+- **Attack transferability:** a recurrent reinforcement-learning attacker trained on frozen source model families and evaluated, without further learning, on a held-out victim family.
 
-## Files
+The transferability work asks a specific question: can an RL attack policy learn reusable attack behavior from multiple source architectures, then transfer to an unseen target architecture under a fixed query budget?
 
-### Core certification
+> Current status: the M4/CIFAR-10 run is an **exploratory feasibility pilot**, not a paper-ready result. It validates the frozen cross-victim workflow end-to-end, but its RL attacker did not beat the random-action control.
 
-- **`deeppoly_mnist.ipynb`** — Trains an MLP on MNIST with a DeepPoly robustness loss. Compares certified accuracy of a baseline (cross-entropy only) vs a DeepPoly-trained model at multiple L∞ epsilon values. Pure PyTorch implementation of the DeepPoly abstract domain (affine layer propagation, ReLU bounds with identity/zero lower-bound selection, epsilon curriculum during training).
+## M4 CIFAR-10 pilot results
 
-- **`adversarial_game.py`** — Adversarial training (PGD, Madry et al. 2018) on a CNN with DeepPoly certification. Trains a CNN with PGD-7, then evaluates with PGD-40 attacks and DeepPoly formal certification. Implements a two-player zero-sum game: Defender (weights) vs Attacker (perturbations). Supports numpy-based DeepPoly verification for conv2d layers (not just FC).
+The completed pilot trained the attacker only on a Classical CNN and a Modern CNN. It then froze the attacker and evaluated it against a held-out Patch Transformer (ViT-like) victim.
 
-### Attacks & transferability
+![Frozen-policy cross-victim transfer pipeline](docs/research/figures/cifar10_m4_pilot_pipeline.svg)
 
-- **`mnist_rotation_attacks.ipynb`** — Empirical rotation attacks on a simple MLP (grid search over angles, not formal certification).
+### Experiment setup
 
-- **`rl_attack_transfer.ipynb`** — Legacy DQN prototype retained for provenance; it is not the research evaluation surface.
-- **`notebooks/rl_cross_victim_pilot.ipynb`** — Thin package-backed notebook for protocol inspection, smoke execution, ASR/query analysis, and action diagnostics.
-- **`notebooks/cifar10_mac_pilot.ipynb`** — Apple Silicon/MPS CIFAR-10 pilot. It trains source CNN victims, freezes the recurrent GroupDRO PPO policy, and evaluates its transfer to a held-out patch transformer.
-- **`rl_transfer/`** — Tested cross-victim research harness. The feed-forward DQN is retained as a baseline; the primary method is a recurrent policy trained across source victim families and frozen on held-out families.
-- **`docs/research/rl_cross_victim_research_plan.pdf`** — Canonical 12-page research and publication plan.
-- **`docs/research/cifar10_m4_pilot_summary.md`** — Visual result summary for the completed M4 pilot, including victim-quality gates, attack success over query budget, and the go/no-go decision.
+| Item | Pilot value |
+| --- | --- |
+| Dataset | CIFAR-10 |
+| Hardware | Apple M4 using PyTorch MPS |
+| Wall-clock time | 6 min 12 s |
+| Source victim families | Classical CNN and Modern CNN |
+| Held-out target family | Patch Transformer |
+| RL policy | Recurrent PPO with GroupDRO source-family weighting |
+| Policy training | 400 scheduled episodes, 205 trainable episodes, 5,261 source-model calls |
+| Target attack budget | 25 total target queries, \(L_\infty\) epsilon = 8/255 |
+| Evaluation denominator | 99 clean-correct target images |
 
-Run a deterministic CPU smoke experiment (no dataset download required):
+All victim models cleared the deliberately modest pilot-quality gate before attack evaluation.
+
+![Victim validation accuracy](docs/research/figures/cifar10_m4_pilot_victim_accuracy.svg)
+
+| Victim family | Validation accuracy | Pilot gate |
+| --- | ---: | ---: |
+| Classical CNN | 66.3% | 60% |
+| Modern CNN | 53.4% | 50% |
+| Patch Transformer | 42.5% | 40% |
+
+### Frozen transfer result
+
+![Attack success rate by query budget](docs/research/figures/cifar10_m4_pilot_asr_by_query.svg)
+
+| Method on held-out Patch Transformer | Successful attacks | ASR at 25 queries | ASR/query AUC |
+| --- | ---: | ---: | ---: |
+| Fixed action | 1 / 99 | 1.0% | 0.9% |
+| Frozen RL policy, deterministic | 2 / 99 | 2.0% | 1.8% |
+| Frozen RL policy, stochastic | 5 / 99 | 5.1% | 2.5% |
+| Random action | 7 / 99 | 7.1% | 3.9% |
+
+The policy **was frozen** during target evaluation: its SHA-256 digest was unchanged before and after deployment. However, stochastic RL reached 5.1% ASR while random reached 7.1%, so this experiment does **not** demonstrate an RL transfer advantage. The right next step is stronger target/victim fitting followed by multiple seeds and confidence intervals—not a stronger claim from one pilot.
+
+Read the full visual report in [docs/research/cifar10_m4_pilot_summary.md](docs/research/cifar10_m4_pilot_summary.md). The committed raw aggregate is [cifar10_m4_pilot_results.json](docs/research/cifar10_m4_pilot_results.json).
+
+## Run it locally
+
+### Install
 
 ```bash
-python -m rl_transfer.cli --output output/rl_transfer/smoke.json
-python -m rl_transfer.cli research-smoke
-python -m rl_transfer.cli validate-full
-python -m pytest -q --cov=rl_transfer --cov-fail-under=80
+uv sync --extra vision --extra analysis --extra notebook --extra test
 ```
 
-The research smoke exercises population scheduling, GroupDRO weights, recurrent inference-time context, a strict total query budget, raw `[0, 1]` projection, per-call traces, and persistent policy digests. It is explicitly marked `research_valid: false`; the ImageNet nested leave-one-family-out config describes the paper-scale run but is never executed in CI.
+### Validate the codebase
 
-- **`speech_adversarial_attack.ipynb`** — PGD attack on a Hugging Face ASR model (waveform perturbation, L∞ bound, CTC loss).
+```bash
+uv run pytest -q
+```
 
-### Research documents
+### Fast M4 feasibility run
 
-- **`research_areas.md`** — Comprehensive research landscape covering abstract interpretation (DeepPoly, αβ-CROWN), certified training (IBP, SABR, MTL-IBP), randomized smoothing, ZKML (zkLLM, EZKL), game-theoretic certification, speech certification (PROVER), and the unexplored gap between ZK proofs and robustness certification.
+This is the short configuration for verifying the full pipeline on a Mac. It is intentionally too small for scientific conclusions.
 
-- **`research_idea.md`** — Specific proposal for a ZK proof of certified accuracy: use LP certificate verification (check pre-computed DeepPoly bounds against committed weights in a ZK circuit, avoiding expensive ReLU bit-decomposition). Targets CCS/S&P venues.
+```bash
+uv run python -m rl_transfer.cifar_cli \
+  --config configs/rl_transfer/cifar10_m4_quick.json \
+  --device auto
+```
 
-- **`rl_attack_transfer_proposal.md`** — Research proposal for studying transferability of RL-based black-box adversarial attacks across CNN, ResNet, and ViT architectures.
+### Bounded M4 pilot
 
-### Papers (reference PDFs)
+```bash
+uv run python -m rl_transfer.cifar_cli \
+  --config configs/rl_transfer/cifar10_m4_pilot.json \
+  --device auto
+```
 
-- **`resarch-paper/DeepPoly.pdf`** — Original DeepPoly paper (Singh et al., POPL 2019)
-- **`resarch-paper/dnn-verifier.pdf`** — Neural network verification survey
-- **`resarch-paper/dnn-certifier.pdf`** — Certification methods comparison
-- **`resarch-paper/hidden-in-the-noise.pdf`** — Hidden-in-the-noise attack paper
-- **`resarch-paper/sacred-bench.pdf`** — Sacred-bench benchmark
+The runner detects MPS automatically, checkpoints every victim and policy block, and resumes only when the configuration, deterministic split, and package-code fingerprint match. Run artifacts and checkpoints are written to `output/rl_transfer/` and are intentionally not committed.
 
-## Requirements
+### Notebook and report
 
-torch, torchvision, numpy, pandas, matplotlib, jupyter
+- [notebooks/cifar10_mac_pilot.ipynb](notebooks/cifar10_mac_pilot.ipynb) — train or inspect an M4 run interactively.
+- [docs/research/cifar10_m4_pilot_summary.md](docs/research/cifar10_m4_pilot_summary.md) — rendered figures and result interpretation.
+- Regenerate the figures after recording a new manifest:
 
-For speech: transformers, soundfile, jiwer, librosa
+```bash
+uv run python -m rl_transfer.pilot_report \
+  --input docs/research/cifar10_m4_pilot_results.json \
+  --output-dir docs/research
+```
 
-For RL: gym, stable-baselines3 (or compatible DQN implementation)
+## Repository guide
 
-For ZK: gnark, nova (Go), or EZKL (Python)
+| Area | Where to look |
+| --- | --- |
+| DeepPoly MNIST certification | [deeppoly_mnist.ipynb](deeppoly_mnist.ipynb) |
+| PGD + DeepPoly adversarial game | [adversarial_game.py](adversarial_game.py) |
+| Cross-victim RL attack harness | [rl_transfer/](rl_transfer) |
+| M4 pilot configuration | [configs/rl_transfer/](configs/rl_transfer) |
+| Legacy DQN transfer prototype | [rl_attack_transfer.ipynb](rl_attack_transfer.ipynb) |
+| Research plan | [docs/research/rl_cross_victim_research_plan.pdf](docs/research/rl_cross_victim_research_plan.pdf) |
+| Broader research directions | [research_areas.md](research_areas.md), [research_idea.md](research_idea.md), and [rl_attack_transfer_proposal.md](rl_attack_transfer_proposal.md) |
+| Speech attack prototype | [speech_adversarial_attack.ipynb](speech_adversarial_attack.ipynb) |
+
+## Research protocol notes
+
+The RL attacker is never allowed to train on, tune against, or update during evaluation on the held-out target family. Every target call—including initialization and failed attempts—counts toward the total target-query budget. Lower-budget results are computed from each same full attack trajectory rather than by giving separate runs more chances.
+
+The current pilot uses one dataset, one held-out model per family, and one seed. It should be expanded to multiple architecture instances, nested family-level selection, repeated seeds, and uncertainty reporting before making a general transferability claim.
 
 ## References
 
-- DeepPoly: Singh et al., POPL 2019. https://github.com/eth-sri/eran
+- DeepPoly: Singh et al., POPL 2019 — <https://github.com/eth-sri/eran>
 - PGD adversarial training: Madry et al., ICLR 2018
-- αβ-CROWN: Wang et al., NeurIPS 2021. https://github.com/Verified-Intelligence/alpha-beta-CROWN
-- PROVER (speech certification): Ryou et al., CAV 2021
-- FairProof (ZK fairness): Yadav et al., ICML 2024
+- \(\alpha\beta\)-CROWN: Wang et al., NeurIPS 2021
