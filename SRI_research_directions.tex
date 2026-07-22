@@ -1,0 +1,560 @@
+\documentclass[11pt,a4paper]{article}
+
+% Packages
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{float}
+\usepackage{hyperref}
+\usepackage{xcolor}
+
+% Title
+\title{\textbf{SRI Research Directions}\\[0.5em]
+\large Research Projects in Adversarial Machine Learning}
+
+\author{Summer Research Internship}
+\date{July 2026}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+This document presents two research directions in adversarial machine learning. The first explores using zero-knowledge proofs for private certified-robustness auditing, enabling a model owner to prove certified accuracy over a committed test set without revealing model weights, test inputs, labels, or per-sample certificates. The second investigates whether reinforcement learning-based adversarial attack policies transfer across neural network architectures. Both directions address open questions with practical security implications.
+\end{abstract}
+
+\tableofcontents
+\newpage
+
+%##############################################################################
+\part{Zero-Knowledge Proofs for Private Certified Robustness}
+%##############################################################################
+
+\section{Introduction}
+
+\subsection{The Problem: Robustness Auditing with Private Assets}
+
+Neural networks are increasingly deployed in safety-critical systems: autonomous vehicles, medical diagnosis, financial fraud detection, and content moderation. These systems are vulnerable to \textbf{adversarial examples}---carefully crafted inputs that cause the model to make incorrect predictions.
+
+For a deployed model, a regulator or auditor may ask:
+\begin{quote}
+``Can you prove this model is robust to small adversarial perturbations?''
+\end{quote}
+
+The model owner may answer:
+\begin{quote}
+``Only if we can keep our model weights, test data, and labels private.''
+\end{quote}
+
+This creates a practical research problem. Public robustness certification exposes proprietary artifacts, while private claims cannot be independently verified.
+
+\subsection{Clean Accuracy vs. Certified Accuracy}
+
+Clean accuracy only says that the model predicts correctly on unmodified test inputs. Certified accuracy is stronger. It says that for a fraction of test inputs, \textit{every} allowed perturbation inside an $\varepsilon$-ball preserves the correct prediction.
+
+Given a classifier $f$, input $x$, label $y$, and perturbation radius $\varepsilon$, a sample is certified robust if:
+\[
+    \forall x' \text{ such that } \|x' - x\|_\infty \leq \varepsilon,\quad f(x') = y.
+\]
+
+The certified accuracy over a test set of size $N$ is:
+\[
+    \frac{1}{N}\sum_{i=1}^{N} \mathbf{1}[\text{sample } i \text{ is certified robust}].
+\]
+
+The research goal is to prove a statement such as:
+\begin{quote}
+``The committed model has certified accuracy at least $X\%$ at radius $\varepsilon$ on the committed test set.''
+\end{quote}
+
+without revealing the model, test samples, labels, or which samples passed.
+
+\subsection{The Trust Dilemma}
+
+Current approaches all have serious limitations:
+
+\begin{table}[H]
+\centering
+\begin{tabular}{@{}p{4.1cm}p{8.6cm}@{}}
+\toprule
+\textbf{Approach} & \textbf{Problem} \\
+\midrule
+Reveal the model and test set & Breaks model IP and may expose sensitive data \\
+Reveal only a robustness score & Auditor must trust the model owner \\
+Reveal per-sample certificates & May leak test-set and model information \\
+Let the company choose a private test set & The company can cherry-pick easy samples \\
+Use ordinary ZK inference proofs & Proves clean predictions, not certified robustness \\
+\bottomrule
+\end{tabular}
+\caption{Current approaches to private robustness auditing and their limitations.}
+\end{table}
+
+\subsection{The Idea: Zero-Knowledge Proofs}
+
+We propose using \textbf{zero-knowledge proofs} (ZKPs) as a private audit mechanism. The prover produces one proof of the following form:
+
+\begin{quote}
+``I know private model weights, private test samples, private labels, and valid robustness certificates such that at least $T$ out of $N$ samples are certified robust at radius $\varepsilon$.''
+\end{quote}
+
+The verifier learns the claim is true, but learns nothing about the hidden weights, images, labels, per-sample bounds, or which samples were certified.
+
+The key point is that the proof does \textbf{not} trust the prover's DeepPoly output. DeepPoly is run outside the proof only to generate a candidate certificate. The ZK proof checks that this certificate is mathematically valid.
+
+%==============================================================================
+\section{Background}
+%==============================================================================
+
+\subsection{Adversarial Robustness}
+
+Given a neural network classifier $f: \mathbb{R}^n \rightarrow \{1, \ldots, k\}$ and an input $x$ with true label $y$, an \textbf{adversarial example} is a perturbed input $x' = x + \delta$ such that:
+\begin{enumerate}
+    \item $f(x') \neq y$ (misclassification)
+    \item $\|\delta\|_p \leq \varepsilon$ for some small $\varepsilon$ (imperceptibility)
+\end{enumerate}
+
+The most common norm is $L_\infty$: $\|\delta\|_\infty = \max_i |\delta_i| \leq \varepsilon$.
+
+Attack methods such as FGSM, PGD, and C\&W search for one concrete adversarial input. Robustness certification asks the opposite question: can we prove that \textit{no} adversarial input exists inside the allowed perturbation set?
+
+\subsection{DeepPoly-Style Robustness Certificates}
+
+DeepPoly is an abstract-interpretation method for neural-network certification. Instead of enumerating all perturbed inputs, it propagates lower and upper bounds through the network.
+
+For each neuron $z_i$, a certificate contains bounds:
+\[
+    l_i \leq z_i \leq u_i.
+\]
+
+At the output layer, the sample is certified if the lower bound of the true class beats the upper bound of every wrong class:
+\[
+    l_{\text{true}} > u_j \quad \forall j \neq \text{true}.
+\]
+
+DeepPoly handles ReLU layers using cases:
+\begin{itemize}
+    \item always active: $l \geq 0$
+    \item always inactive: $u \leq 0$
+    \item mixed: $l < 0 < u$, using a linear relaxation
+\end{itemize}
+
+The proposed system treats these bounds as a \textbf{certificate}. The expensive certifier runs offline; the ZK relation only checks that the certificate is consistent with the committed model and input.
+
+\subsection{Zero-Knowledge Proofs}
+
+A \textbf{zero-knowledge proof} is a cryptographic protocol where a prover convinces a verifier that a statement is true, without revealing any information beyond the validity of the statement.
+
+Formally, a ZKP for a relation $R$ allows the prover to prove knowledge of a \textbf{witness} $w$ such that $(x, w) \in R$, where $x$ is a public statement.
+
+\textbf{Properties:}
+\begin{itemize}
+    \item \textbf{Completeness}: If the prover knows a valid witness, they can always convince the verifier
+    \item \textbf{Soundness}: If no valid witness exists, the prover cannot convince the verifier (except with negligible probability)
+    \item \textbf{Zero-knowledge}: The verifier learns nothing beyond the fact that a valid witness exists
+\end{itemize}
+
+\subsection{Commitments, Range Proofs, and Folding}
+
+This project needs several cryptographic ingredients:
+\begin{itemize}
+    \item \textbf{Commitments}: bind the prover to private weights and private test data without revealing them.
+    \item \textbf{Range proofs}: prove hidden inequalities such as $l \geq 0$, $u \leq 0$, and $l_{\text{true}} - u_j > 0$.
+    \item \textbf{Folding}: aggregate many per-sample checks into one final proof.
+\end{itemize}
+
+Bulletproofs are relevant for hidden range checks, similar to how confidential transaction systems prove hidden amounts are in a valid range. Nova-style folding is relevant because a test set may contain thousands of samples; folding lets the verifier check one accumulated proof instead of thousands of separate proofs.
+
+%==============================================================================
+\section{Research Direction}
+%==============================================================================
+
+\subsection{Core Idea}
+
+Design a ZKP system for the following relation.
+
+\textbf{Public inputs} (known to both parties):
+\begin{itemize}
+    \item $C_W$: commitment to model weights
+    \item $C_D$: commitment to the test set and labels
+    \item $\varepsilon$: robustness radius
+    \item $T$: required number of certified samples
+    \item model architecture and fixed-point precision parameters
+\end{itemize}
+
+\textbf{Private witness} (known only to prover):
+\begin{itemize}
+    \item model weights $W$
+    \item test samples $x_i$ and labels $y_i$
+    \item DeepPoly-style certificates: neuron bounds, ReLU cases, and final margins
+\end{itemize}
+
+\textbf{Statement to prove}:
+\begin{quote}
+``I know openings of $C_W$ and $C_D$ and valid certificates showing that at least $T$ samples are certified robust at radius $\varepsilon$.''
+\end{quote}
+
+\subsection{Protocol Sketch}
+
+\begin{enumerate}
+    \item \textbf{Commit}: The model owner commits to quantized model weights and to a fixed test set. If the test set is private, it should be regulator-provided or committed before the audit to prevent cherry-picking.
+
+    \item \textbf{Generate candidate certificates}: For each test sample, run DeepPoly outside the ZK proof to produce candidate layer bounds.
+
+    \item \textbf{Check certificates in ZK}: The proof verifies that each certificate follows from the committed model and committed sample:
+    \begin{itemize}
+        \item input bounds match $x_i \pm \varepsilon$,
+        \item affine layer bounds are consistent with the committed weights,
+        \item ReLU cases are valid using hidden sign/range checks,
+        \item final class margin proves robustness,
+        \item labels and samples match the committed dataset.
+    \end{itemize}
+
+    \item \textbf{Count certified samples}: The proof increments a hidden counter for each valid sample certificate.
+
+    \item \textbf{Aggregate}: Nova-style folding aggregates the repeated per-sample relation into a single proof.
+
+    \item \textbf{Verify}: The verifier checks one proof and learns only whether the certified-count threshold was met.
+\end{enumerate}
+
+\subsection{Why Check a Certificate Instead of Proving Full Inference?}
+
+Naive ZKML would prove every neural-network operation directly. This is expensive for large networks, especially because ReLU comparisons and range checks are costly inside arithmetic circuits.
+
+The proposed approach uses a proof-carrying-verification pattern:
+\begin{quote}
+The expensive verifier produces a certificate; the ZK proof checks the certificate.
+\end{quote}
+
+The certificate may still be large, and checking dense linear layers is not free. The research question is whether this certificate-checking relation is substantially cheaper than proving full inference or full bound propagation inside ZK.
+
+\subsection{Cryptographic Backends}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{@{}p{3.3cm}p{4.3cm}p{5.1cm}@{}}
+\toprule
+\textbf{Tool} & \textbf{Use in this project} & \textbf{Caution} \\
+\midrule
+Gnark/R1CS & First prototype for the whole certificate checker & Easiest to build, but may be expensive \\
+\midrule
+Bulletproofs / Bulletproofs++ & Hidden range, sign, overflow, and margin checks & Helps inequalities; does not solve private matrix multiplication \\
+\midrule
+Dory / IPA arguments & Transparent committed inner-product proofs & Natural trustless baseline, but may not batch full NN layers well \\
+\midrule
+zkMatrix-style protocols & Committed private matrix/matrix multiplication & Better match for linear layers, but integration with DeepPoly and folding must be proven \\
+\midrule
+Nova folding & Aggregates many sample checks into one proof & Reduces verifier work, not prover work \\
+\bottomrule
+\end{tabular}
+\caption{Possible cryptographic components and their roles.}
+\end{table}
+
+\subsection{Why This Is Novel}
+
+Existing ZKML work focuses on proving inference, testing, fairness, or training claims. This project targets private \textbf{certified robustness} using an abstract interpretation certificate checker.
+
+\begin{table}[H]
+\centering
+\begin{tabular}{@{}p{3.2cm}p{5cm}p{5.2cm}@{}}
+\toprule
+\textbf{Work} & \textbf{What it proves} & \textbf{Difference from this project} \\
+\midrule
+zkCNN / ZEN & Correct neural-network inference & Clean inference, not certified robustness \\
+\midrule
+pvCNN / verifiable evaluation & Private model evaluation or test accuracy & Empirical accuracy, not robustness certificates \\
+\midrule
+FairProof & Confidential fairness certificate & Closest work; different certificate type and not dataset-level certified accuracy \\
+\midrule
+Kaizen & Correct training of a committed model & Training provenance, not robustness auditing \\
+\midrule
+DeepPoly / CROWN & Public robustness certificates & No privacy-preserving proof layer \\
+\bottomrule
+\end{tabular}
+\caption{Related work positioning.}
+\end{table}
+
+The safer novelty claim is:
+\begin{quote}
+\textit{A zero-knowledge checker for DeepPoly-style robustness certificates, aggregated into a private certified-accuracy proof.}
+\end{quote}
+
+This avoids overclaiming ``first ZKML evaluation'' while still targeting a clear gap.
+
+\subsection{Potential Applications}
+
+\begin{itemize}
+    \item \textbf{Regulatory audits}: prove a safety threshold without exposing proprietary weights or sensitive test data.
+    \item \textbf{Model procurement}: compare vendors using certified-robustness claims without requiring full model disclosure.
+    \item \textbf{Private benchmark reporting}: publish certified-accuracy attestations on restricted datasets.
+    \item \textbf{Responsible disclosure variant}: prove existence of a hidden adversarial example without revealing the perturbation.
+\end{itemize}
+
+\subsection{Main Technical Obstacles}
+
+\begin{enumerate}
+    \item \textbf{Private matrix-vector products}: checking affine layer bounds requires proving relations like $y = Wx$ where $W$, $x$, and $y$ may all be hidden.
+    \item \textbf{Fixed-point soundness}: DeepPoly is naturally real-valued, but ZK systems use finite-field arithmetic. Rounding, overflow, and signed comparisons must be conservative.
+    \item \textbf{ReLU case validation}: the circuit must prove whether a ReLU is active, inactive, or mixed without revealing the bounds.
+    \item \textbf{Dataset trust}: a private test set is meaningful only if it is regulator-provided, jointly committed, or otherwise protected from cherry-picking.
+    \item \textbf{Practical performance}: the system must beat a strong ZK inference baseline after including all range checks, commitment openings, and aggregation costs.
+\end{enumerate}
+
+\subsection{Minimum Viable Research Plan}
+
+\begin{enumerate}
+    \item Implement a one-image fixed-point DeepPoly certificate checker in Gnark/R1CS for a small MNIST MLP.
+    \item Measure actual constraints for affine layers, ReLU case checks, range checks, and final margins.
+    \item Compare against a direct ZK inference baseline.
+    \item Add commitments for weights, test samples, and labels.
+    \item Add folding to aggregate many image checks into one certified-accuracy proof.
+    \item Explore Dory or zkMatrix-style protocols only after the baseline relation is sound and measured.
+\end{enumerate}
+
+%##############################################################################
+\newpage
+\part{Transferability of RL-Learned Adversarial Attack Policies}
+%##############################################################################
+
+\section{Introduction}
+
+\subsection{Adversarial Examples and Transfer Attacks}
+
+Adversarial examples---small perturbations that cause neural networks to misclassify---are a well-studied vulnerability. A rich literature has shown that adversarial examples crafted on one model can often \textbf{transfer} to fool different models, even those with fundamentally different architectures.
+
+For example, an adversarial perturbation computed using gradients on a CNN can sometimes fool a Vision Transformer (ViT), despite the completely different internal mechanisms (convolutions vs. self-attention). This phenomenon is called \textbf{transfer attack} and has been extensively studied for gradient-based methods.
+
+\subsection{RL-Based Adversarial Attacks}
+
+A recent line of work proposes using \textbf{reinforcement learning} (RL) to learn adversarial attack policies:
+
+\begin{itemize}
+    \item \textbf{RLAB} (Sarkar et al., AAAI 2025): Trains a DQN agent to add patch-based distortions to images to fool a ResNet classifier.
+
+    \item \textbf{Adversarial Agents} (Domico et al., CVPR 2026): Trains an RL agent that generates adversarial examples with fewer queries than gradient-based black-box methods.
+\end{itemize}
+
+These methods learn a \textbf{policy}---a state-to-action mapping that decides which perturbations to apply based on the current image state and model feedback.
+
+\subsection{The Open Question}
+
+\textbf{No existing work has tested whether RL-learned attack policies transfer across different classifier architectures.}
+
+This is a fundamental gap. RL learns a \textit{sequential decision policy} from sparse rewards, which is mechanistically different from computing a gradient and applying a single perturbation. Whether this different kind of learned knowledge generalizes across architectures is unknown.
+
+A comprehensive February 2026 benchmark by Wang et al. reviews over 170 transfer-based attack methods across six categories: gradient-based, input transformation, advanced objective function, generation-based (GAN), model-related, and ensemble-based. \textbf{Reinforcement learning does not appear as a category.}
+
+%==============================================================================
+\section{Research Question}
+%==============================================================================
+
+\begin{quote}
+\textbf{Do adversarial perturbation policies learned by a DQN agent on one classifier architecture transfer to other, fundamentally different architectures?}
+\end{quote}
+
+Concretely:
+\begin{enumerate}
+    \item Train a DQN agent to craft adversarial patch perturbations on a simple CNN (surrogate model)
+    \item Freeze the learned policy (no further training)
+    \item Test whether the same policy successfully attacks ResNet-18 and ViT-tiny (target models)
+\end{enumerate}
+
+\textbf{If yes:} RL discovers architecture-agnostic perturbation strategies $\rightarrow$ practical black-box threat
+
+\textbf{If no:} RL overfits to architecture-specific features $\rightarrow$ reveals fundamental limitations of RL-based attacks
+
+%==============================================================================
+\section{Why the Answer Is Non-Trivial}
+%==============================================================================
+
+\subsection{Gradient-Based vs. RL-Based Attacks}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{@{}lp{5cm}p{5cm}@{}}
+\toprule
+\textbf{Factor} & \textbf{Gradient-Based} & \textbf{RL Policy-Based} \\
+\midrule
+Mechanism & Single perturbation from backpropagation & Sequential decisions from sparse rewards \\
+Information used & Loss landscape curvature & State-action-reward experiences \\
+Search strategy & Local gradient optimization & Exploration vs. exploitation \\
+Transfer rate (CNN$\to$ViT) & 20--50\% documented & Unknown \\
+\bottomrule
+\end{tabular}
+\caption{Comparison of gradient-based and RL-based attack mechanisms.}
+\end{table}
+
+\subsection{Arguments For Transfer}
+
+If the RL agent learns general heuristics like:
+\begin{itemize}
+    \item ``Target high-variance patches''
+    \item ``Perturb edges between objects''
+    \item ``Focus on the center of the image''
+\end{itemize}
+
+These are properties of \textit{images}, not specific models. Such strategies should transfer.
+
+\subsection{Arguments Against Transfer}
+
+The RL agent gets reward based on whether \textit{this specific CNN} flips its prediction. It might learn CNN-specific strategies:
+\begin{itemize}
+    \item ``Perturb patches that activate specific conv1 filters''
+    \item ``Stop when confidence drops below 0.3'' (but confidence calibration differs across architectures)
+\end{itemize}
+
+If the policy secretly encodes CNN-specific knowledge, it will fail on ResNet/ViT.
+
+\textbf{Neither outcome is obvious. That is exactly why this is a research question.}
+
+%==============================================================================
+\section{Related Work}
+%==============================================================================
+
+\begin{table}[H]
+\centering
+\begin{tabular}{@{}lp{4.5cm}p{5cm}@{}}
+\toprule
+\textbf{Paper} & \textbf{What it does} & \textbf{Why it's NOT this proposal} \\
+\midrule
+Behzadan \& Munir, 2017 & Transfers adversarial examples between RL \textit{agents} (DQN$\to$A3C) & Studies fooling RL agents, not using RL to fool image classifiers \\
+\midrule
+RLAB, AAAI 2025 & RL agent attacks a single ResNet & No cross-architecture transfer tested \\
+\midrule
+Adversarial Agents, CVPR 2026 & RL agent learns attack on one model & Tests held-out inputs of \textit{same} model only \\
+\midrule
+Wang et al., arXiv 2026 & Reviews 170+ transfer methods & Zero RL-based attacks in the taxonomy \\
+\bottomrule
+\end{tabular}
+\caption{Related work and why it does not address our research question.}
+\end{table}
+
+%==============================================================================
+\section{Potential Outcomes}
+%==============================================================================
+
+\begin{table}[H]
+\centering
+\begin{tabular}{@{}p{4.2cm}p{8.5cm}@{}}
+\toprule
+\textbf{Outcome} & \textbf{Implication} \\
+\midrule
+RL transfers well ($>$60\% on ResNet/ViT) & RL discovers universal image vulnerabilities. Practical black-box threat. Defense research must address policy-based attacks. \\
+\midrule
+RL transfers poorly ($<$30\%) & RL overfits to architecture-specific features. Gradient-based transfer is fundamentally different from policy transfer. \\
+\midrule
+Transfers to ResNet but not ViT & CNN and ResNet share convolutional inductive biases; ViT's self-attention is genuinely different. \\
+\bottomrule
+\end{tabular}
+\caption{Possible outcomes and their implications.}
+\end{table}
+
+\textbf{Any outcome is valuable} because the numbers do not currently exist.
+
+%==============================================================================
+\section{Open Questions}
+%==============================================================================
+
+\begin{enumerate}
+    \item Does the state representation (architecture-agnostic by design) drive transfer, or does the learned policy still overfit?
+    \item How does RL transfer compare to gradient-based transfer on the same surrogate/target pairs?
+    \item Can training on an ensemble of architectures improve transfer to unseen architectures?
+    \item What strategies does the RL agent actually learn? (Interpretability analysis)
+\end{enumerate}
+
+%==============================================================================
+\section{Target Venues}
+%==============================================================================
+
+\begin{itemize}
+    \item ICLR Workshop on Trustworthy ML
+    \item SaTML (IEEE Conference on Secure and Trustworthy Machine Learning)
+    \item AAAI Workshop on Adversarial Machine Learning
+    \item CVPR Workshop on Security in AI
+\end{itemize}
+
+%##############################################################################
+\newpage
+\part{Summary}
+%##############################################################################
+
+\section{Comparison of Research Directions}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{@{}lp{5.5cm}p{5.5cm}@{}}
+\toprule
+& \textbf{Direction 1: ZK Proofs} & \textbf{Direction 2: RL Transfer} \\
+\midrule
+\textbf{Domain} & Cryptography + ML Security & Reinforcement Learning + Adversarial ML \\
+\textbf{Core question} & Can we privately prove certified robustness over a committed test set? & Do RL attack policies generalize across architectures? \\
+\textbf{Novelty type} & ZK-checkable robustness certificates + fixed-point soundness & New empirical measurement \\
+\textbf{Main deliverable} & Certificate-checking ZK prototype + benchmarks & Transfer success rates + analysis \\
+\textbf{Skills required} & ZK circuits, commitments, DeepPoly/CROWN, fixed-point arithmetic & RL (DQN), PyTorch, CNN/ViT training \\
+\bottomrule
+\end{tabular}
+\caption{Comparison of the two research directions.}
+\end{table}
+
+%##############################################################################
+\newpage
+\section*{References}
+%##############################################################################
+
+\subsection*{Zero-Knowledge Proofs and ZKML}
+
+\begin{enumerate}
+    \item Groth, J. ``On the size of pairing-based non-interactive arguments.'' EUROCRYPT 2016.
+
+    \item Liu, T., et al. ``zkCNN: Zero Knowledge Proofs for Convolutional Neural Network Predictions and Accuracy.'' CCS 2021.
+
+    \item Feng, B., et al. ``ZEN: Efficient Zero-Knowledge Proofs for Neural Networks.'' IACR ePrint 2021.
+
+    \item Yadav, C., et al. ``FairProof: Confidential and Certifiable Fairness for Neural Networks.'' ICML 2024.
+
+    \item Abbaszadeh, A., et al. ``Zero-Knowledge Proofs of Training for Deep Neural Networks.'' CCS 2024.
+
+    \item Kothapalli, A., et al. ``Nova: Recursive ZK Arguments from Folding Schemes.'' CRYPTO 2022.
+
+    \item B{\"u}nz, B., et al. ``Bulletproofs: Short Proofs for Confidential Transactions and More.'' IEEE S\&P 2018.
+\end{enumerate}
+
+\subsection*{Adversarial Examples and Robustness Certification}
+
+\begin{enumerate}
+\setcounter{enumi}{7}
+    \item Szegedy, C., et al. ``Intriguing properties of neural networks.'' ICLR 2014.
+
+    \item Goodfellow, I., Shlens, J., Szegedy, C. ``Explaining and harnessing adversarial examples.'' ICLR 2015.
+
+    \item Madry, A., et al. ``Towards deep learning models resistant to adversarial attacks.'' ICLR 2018.
+
+    \item Carlini, N., Wagner, D. ``Towards evaluating the robustness of neural networks.'' IEEE S\&P 2017.
+
+    \item Singh, G., Gehr, T., P{\"u}schel, M., Vechev, M. ``An Abstract Domain for Certifying Neural Networks.'' POPL 2019.
+
+    \item Wang, S., et al. ``Beta-CROWN: Efficient Bound Propagation with Per-neuron Split Constraints for Neural Network Robustness Verification.'' NeurIPS 2021.
+\end{enumerate}
+
+\subsection*{Transfer Attacks}
+
+\begin{enumerate}
+\setcounter{enumi}{13}
+    \item Wang, Z., et al. ``Devling into Adversarial Transferability on Image Classification: Review, Benchmark, and Evaluation.'' arXiv:2602.23117, 2026.
+\end{enumerate}
+
+\subsection*{RL-Based Adversarial Attacks}
+
+\begin{enumerate}
+\setcounter{enumi}{14}
+    \item Sarkar, S., et al. ``RLAB: Reinforcement Learning Platform for Adversarial Black-box Attacks.'' AAAI 2025.
+
+    \item Domico, N., et al. ``Adversarial Agents: Black-Box Evasion Attacks with Reinforcement Learning.'' CVPR 2026.
+
+    \item Behzadan, V., Munir, A. ``Vulnerability of Deep Reinforcement Learning to Policy Induction Attacks.'' 2017.
+\end{enumerate}
+
+\end{document}
