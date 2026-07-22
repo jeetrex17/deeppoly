@@ -1,0 +1,106 @@
+{
+  "schema_version": 1,
+  "name": "cifar10-m4-pilot",
+  "research_valid": false,
+  "fingerprint": "42d40f97eb1637b9aedefea8b9fdd67e5f4df571969ad886b1f2d410785c4014",
+  "dataset": {
+    "name": "CIFAR-10",
+    "version": "torchvision-0.28.0"
+  },
+  "device": {
+    "accelerated": true,
+    "requested": "mps",
+    "resolved": "mps"
+  },
+  "runtime": {
+    "code_digest": "0bc92f07cbcd7e5dc069d0bb9b39acf5ff5b1a0f9f4afc00263374bd971cb1ba",
+    "determinism": "warn_only; some MPS operators may not have deterministic implementations",
+    "git_revision": "16bfae6fe1b733051d2e9e7d3b5cb00a692b0883",
+    "mps_available": true,
+    "mps_built": true,
+    "platform": "macOS-15.7.3-arm64-arm-64bit-Mach-O",
+    "python": "3.13.11",
+    "torch": "2.13.0"
+  },
+  "elapsed_seconds": 372.2621260830201,
+  "victim_accuracy_gate": {
+    "passed": true,
+    "thresholds": {
+      "classical_cnn": 0.6,
+      "modern_cnn": 0.5,
+      "transformer": 0.4
+    }
+  },
+  "target_test_accuracy": 0.495,
+  "victims": {
+    "classical_cnn": {
+      "victim_id": "cifar_residual_cnn",
+      "source_validation_accuracy": 0.663,
+      "checkpoint_sha256": "97784f7d89d77702a766c59e0087bb05ef72f1d8935e65b4409d015810de9022"
+    },
+    "modern_cnn": {
+      "victim_id": "cifar_depthwise_cnn",
+      "source_validation_accuracy": 0.534,
+      "checkpoint_sha256": "56ca7d254381b2a54261940cbe212da10f17ecc5824b3611ddf6c9433c008cd3"
+    },
+    "transformer": {
+      "victim_id": "cifar_patch_transformer",
+      "source_validation_accuracy": 0.425,
+      "checkpoint_sha256": "2573730f8f116fb1200b25940ef34a1ad2f6318d94d98f8c855d45362ab59c7a"
+    }
+  },
+  "policy": {
+    "checkpoint_sha256": "b4505d8d26a2a3f8b1fb8dff9a040aef6f1644c4ad5220f7580a2a049319ffb9",
+    "training": {
+      "episodes": 400,
+      "trained_episodes": 205,
+      "source_calls": 5261,
+      "final_family_weights": {
+        "classical_cnn": 0.6977554340058921,
+        "modern_cnn": 0.30224456599410776
+      }
+    }
+  },
+  "evaluation": {
+    "fixed_action": {
+      "eligible": 99,
+      "successes": 1,
+      "asr_at_budgets": {"0": 0.0, "5": 0.010101010101010102, "10": 0.010101010101010102, "25": 0.010101010101010102},
+      "asr_query_auc": 0.009090909090909092,
+      "deterministic_actions": true,
+      "action_histogram": {"0": 2354},
+      "normalized_action_entropy": 0.0,
+      "frozen": true
+    },
+    "groupdro_recurrent_ppo": {
+      "eligible": 99,
+      "successes": 2,
+      "asr_at_budgets": {"0": 0.0, "5": 0.020202020202020204, "10": 0.020202020202020204, "25": 0.020202020202020204},
+      "asr_query_auc": 0.018181818181818184,
+      "deterministic_actions": true,
+      "action_histogram": {"8": 48, "18": 2287},
+      "normalized_action_entropy": 0.031528109479513754,
+      "frozen": true
+    },
+    "groupdro_recurrent_ppo_stochastic": {
+      "eligible": 99,
+      "successes": 5,
+      "asr_at_budgets": {"0": 0.0, "5": 0.010101010101010102, "10": 0.020202020202020204, "25": 0.050505050505050504},
+      "asr_query_auc": 0.025252525252525252,
+      "deterministic_actions": false,
+      "action_histogram": {"0": 76, "1": 118, "2": 74, "3": 91, "4": 109, "5": 116, "6": 69, "7": 112, "8": 123, "9": 75, "10": 125, "11": 153, "12": 80, "13": 66, "14": 78, "15": 113, "16": 118, "17": 123, "18": 136, "19": 64, "20": 64, "21": 68, "22": 74, "23": 78},
+      "normalized_action_entropy": 0.9884790908103166,
+      "frozen": true
+    },
+    "random_action": {
+      "eligible": 99,
+      "successes": 7,
+      "asr_at_budgets": {"0": 0.0, "5": 0.030303030303030304, "10": 0.030303030303030304, "25": 0.0707070707070707},
+      "asr_query_auc": 0.0393939393939394,
+      "deterministic_actions": false,
+      "action_histogram": {"0": 98, "1": 103, "2": 108, "3": 92, "4": 104, "5": 90, "6": 105, "7": 104, "8": 107, "9": 90, "10": 82, "11": 96, "12": 100, "13": 93, "14": 92, "15": 102, "16": 104, "17": 81, "18": 68, "19": 88, "20": 123, "21": 80, "22": 90, "23": 92},
+      "normalized_action_entropy": 0.997776635559462,
+      "frozen": true
+    }
+  }
+}

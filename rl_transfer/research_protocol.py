@@ -50,12 +50,17 @@ def _validated_catalog(policy: RecurrentAttackPolicy, config: AttackConfig, chan
     return catalog
 
 
-def run_frozen_episode(policy: RecurrentAttackPolicy, victim: nn.Module, image: torch.Tensor, label: int, sample_id: str, victim_id: str, family: str, config: AttackConfig, deterministic: bool = True) -> FrozenEpisodeResult:
+def run_frozen_episode(policy, victim: nn.Module, image: torch.Tensor, label: int, sample_id: str, victim_id: str, family: str, config: AttackConfig, deterministic: bool = True) -> FrozenEpisodeResult:
     if config.max_queries < 1:
         raise ValueError("at least one query is required for T1")
+    device = (
+        next(policy.parameters()).device
+        if isinstance(policy, nn.Module)
+        else next(victim.parameters()).device
+    )
     before = policy.persistent_digest()
     oracle = AuditedVictim(victim, config.max_queries, "scores", victim_id)
-    original = image.detach().clone().float().clamp(0, 1)
+    original = image.detach().clone().float().clamp(0, 1).to(device)
     adversarial = original.clone()
     initial = oracle.query(adversarial, sample_id, "initialization", 0)
     clean_scores = initial.scores.clone()
@@ -86,21 +91,35 @@ def run_frozen_episode(policy: RecurrentAttackPolicy, victim: nn.Module, image: 
     return FrozenEpisodeResult(sample_id, victim_id, family, True, success, success_query, oracle.calls, float(delta.abs().max()), float(delta.flatten().norm()), tuple(actions), before, after, tuple(oracle.trace_dicts()))
 
 
-def train_population_policy(policy: RecurrentAttackPolicy, victims: Mapping[str, tuple[str, nn.Module]], samples: Sequence[tuple[torch.Tensor, int]], config: AttackConfig, episodes: int, seed: int) -> dict[str, object]:
+def train_population_policy(
+    policy: RecurrentAttackPolicy,
+    victims: Mapping[str, tuple[str, nn.Module]],
+    samples: Sequence[tuple[torch.Tensor, int]],
+    config: AttackConfig,
+    episodes: int,
+    seed: int,
+    initial_family_weights: Mapping[str, float] | None = None,
+) -> dict[str, object]:
     if not victims or not samples:
         raise ValueError("victims and samples are required")
+    if initial_family_weights is not None and set(initial_family_weights) != set(victims):
+        raise ValueError("initial family weights must match the victim families")
+    device = next(policy.parameters()).device
     schedule = balanced_family_schedule(tuple(victims), episodes, seed)
     family_rewards = {family: [] for family in victims}
     sequences: list[tuple[str, PPOSequence]] = []
+    source_calls = 0
     generator = torch.Generator().manual_seed(seed)
     for episode, family in enumerate(schedule):
         victim_id, victim = victims[family]
         image, label = samples[episode % len(samples)]
         oracle = AuditedVictim(victim, config.max_queries, "scores", victim_id)
-        original, adversarial = image.clone(), image.clone()
+        original = image.detach().clone().float().clamp(0, 1).to(device)
+        adversarial = original.clone()
         initial = oracle.query(adversarial, f"train-{episode}", "initialization", 0)
         clean_scores = initial.scores.clone()
         if initial.predicted_label != label:
+            source_calls += oracle.calls
             continue
         hidden = policy.initial_state()
         catalog = _validated_catalog(policy, config, image.shape[0])
@@ -108,11 +127,16 @@ def train_population_policy(policy: RecurrentAttackPolicy, victims: Mapping[str,
         previous_action, previous_reward = None, 0.0
         while oracle.calls < config.max_queries:
             observation = calibration_resistant_observation(initial.scores, label, clean_scores, (config.max_queries - oracle.calls) / config.max_queries, previous_action, config.action_dim, previous_reward, oracle.calls / config.max_queries)
-            observation_tensor = torch.as_tensor(observation)
+            observation_tensor = torch.as_tensor(observation, device=device)
             with torch.no_grad():
                 logits, value, next_hidden = policy(observation_tensor, hidden)
                 distribution = torch.distributions.Categorical(logits=logits)
-                action = torch.multinomial(distribution.probs, 1, generator=generator).squeeze(0)
+                sampled_action = torch.multinomial(
+                    distribution.probs.detach().cpu(),
+                    1,
+                    generator=generator,
+                ).squeeze(0)
+                action = sampled_action.to(device)
             adversarial = apply_action(adversarial, original, catalog[int(action)], config.epsilon, config.step_size, config.grid_size)
             response = oracle.query(adversarial, f"train-{episode}", "attack", oracle.calls)
             success = response.predicted_label != label
@@ -122,21 +146,35 @@ def train_population_policy(policy: RecurrentAttackPolicy, victims: Mapping[str,
             hidden, initial, previous_action, previous_reward = next_hidden.detach(), response, int(action), reward
             if success:
                 break
+        source_calls += oracle.calls
         if not rewards:
             continue
         returns = []; running = 0.0
         for reward in reversed(rewards):
             running = reward + 0.98 * running
             returns.append(running)
-        returns_tensor = torch.tensor(tuple(reversed(returns)), dtype=torch.float32)
+        returns_tensor = torch.tensor(tuple(reversed(returns)), dtype=torch.float32, device=device)
         values_tensor = torch.stack(values)
         advantages = returns_tensor - values_tensor
         sequences.append((family, PPOSequence(torch.stack(observations), torch.stack(actions), torch.stack(old_logs), advantages, returns_tensor)))
         family_rewards[family].append(sum(rewards))
     if not sequences:
-        return {"episodes": episodes, "trained_episodes": 0, "schedule": schedule, "family_weights": {family: 1 / len(victims) for family in victims}}
+        retained_weights = (
+            dict(initial_family_weights)
+            if initial_family_weights is not None
+            else {family: 1 / len(victims) for family in victims}
+        )
+        return {"episodes": episodes, "trained_episodes": 0, "source_calls": source_calls, "schedule": schedule, "family_weights": retained_weights}
     losses = {family: -sum(values) / len(values) if values else 0.0 for family, values in family_rewards.items()}
-    weights = FamilyRobustWeights(tuple(victims)).update(losses)
+    robust_weights = FamilyRobustWeights(
+        tuple(victims),
+        values=(
+            tuple(float(initial_family_weights[family]) for family in victims)
+            if initial_family_weights is not None
+            else None
+        ),
+    )
+    weights = robust_weights.update(losses)
     sequence_counts = {family: sum(item_family == family for item_family, _ in sequences) for family in victims}
     metrics = policy.ppo_update_sequences([(sequence, weights[family] / sequence_counts[family]) for family, sequence in sequences])
-    return {"episodes": episodes, "trained_episodes": len(sequences), "schedule": schedule, "family_weights": weights, "ppo": metrics}
+    return {"episodes": episodes, "trained_episodes": len(sequences), "source_calls": source_calls, "schedule": schedule, "family_weights": weights, "ppo": metrics}

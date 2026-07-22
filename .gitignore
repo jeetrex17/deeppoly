@@ -3,6 +3,7 @@ models/
 output/
 data/*.ubyte
 data/*.gz
+data/cifar10/
 mnist/
 *.pt
 *.bin

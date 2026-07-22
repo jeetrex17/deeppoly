@@ -1,6 +1,7 @@
 from dataclasses import asdict, dataclass
 import hashlib
 import json
+import math
 
 import numpy as np
 import torch
@@ -14,6 +15,24 @@ class PPOConfig:
     value_weight: float = 0.5
     entropy_weight: float = 0.01
     gradient_clip_norm: float = 0.5
+    update_epochs: int = 4
+
+    def __post_init__(self) -> None:
+        scalar_values = (
+            self.learning_rate,
+            self.clip_ratio,
+            self.value_weight,
+            self.entropy_weight,
+            self.gradient_clip_norm,
+        )
+        if not all(math.isfinite(value) for value in scalar_values):
+            raise ValueError("PPO configuration values must be finite")
+        if self.learning_rate <= 0 or not 0 < self.clip_ratio <= 1:
+            raise ValueError("PPO learning rate and clip ratio must be positive")
+        if self.value_weight < 0 or self.entropy_weight < 0 or self.gradient_clip_norm <= 0:
+            raise ValueError("PPO loss weights and gradient clip must be valid")
+        if not 1 <= self.update_epochs <= 32:
+            raise ValueError("PPO update epochs must be between 1 and 32")
 
 
 @dataclass(frozen=True)
@@ -109,29 +128,60 @@ class RecurrentAttackPolicy(nn.Module):
     def ppo_update_sequences(self, weighted_sequences: list[tuple[PPOSequence, float]]) -> dict[str, float]:
         if not weighted_sequences:
             raise ValueError("at least one sequence is required")
-        policy_terms, value_terms, entropy_terms = [], [], []
-        for sequence, weight in weighted_sequences:
-            hidden = self.initial_state()
-            logits_steps, value_steps = [], []
-            for observation in sequence.observations:
-                logits, value, hidden = self(observation, hidden)
-                logits_steps.append(logits); value_steps.append(value)
-            logits = torch.stack(logits_steps)
-            values = torch.stack(value_steps)
-            distribution = torch.distributions.Categorical(logits=logits)
-            log_probabilities = distribution.log_prob(sequence.actions)
-            ratios = (log_probabilities - sequence.old_log_probabilities).exp()
-            unclipped = ratios * sequence.advantages
-            clipped = ratios.clamp(1 - self.config.clip_ratio, 1 + self.config.clip_ratio) * sequence.advantages
-            policy_terms.append(-torch.minimum(unclipped, clipped).mean() * weight)
-            value_terms.append(nn.functional.mse_loss(values, sequence.returns) * weight)
-            entropy_terms.append(distribution.entropy().mean() * weight)
-        policy_loss = torch.stack(policy_terms).sum()
-        value_loss = torch.stack(value_terms).sum()
-        entropy = torch.stack(entropy_terms).sum()
-        loss = policy_loss + self.config.value_weight * value_loss - self.config.entropy_weight * entropy
-        self.optimizer.zero_grad(set_to_none=True)
-        loss.backward()
-        nn.utils.clip_grad_norm_(self.parameters(), self.config.gradient_clip_norm)
-        self.optimizer.step()
-        return {"loss": float(loss.detach()), "policy_loss": float(policy_loss.detach()), "value_loss": float(value_loss.detach()), "entropy": float(entropy.detach())}
+        weights = torch.tensor(tuple(weight for _, weight in weighted_sequences))
+        if not torch.isfinite(weights).all() or bool((weights < 0).any()) or float(weights.sum()) <= 0:
+            raise ValueError("sequence weights must be finite, non-negative, and non-zero")
+        advantage_values = torch.cat(
+            tuple(sequence.advantages.detach().flatten() for sequence, _ in weighted_sequences)
+        )
+        advantage_mean = advantage_values.mean()
+        advantage_scale = advantage_values.std(unbiased=False).clamp_min(1e-8)
+        normalized_advantages = tuple(
+            (sequence.advantages.detach() - advantage_mean) / advantage_scale
+            for sequence, _ in weighted_sequences
+        )
+        final_metrics: dict[str, float] = {}
+        for _ in range(self.config.update_epochs):
+            policy_terms, value_terms, entropy_terms = [], [], []
+            for (sequence, weight), advantages in zip(weighted_sequences, normalized_advantages):
+                hidden = self.initial_state()
+                logits_steps, value_steps = [], []
+                for observation in sequence.observations:
+                    logits, value, hidden = self(observation, hidden)
+                    logits_steps.append(logits)
+                    value_steps.append(value)
+                logits = torch.stack(logits_steps)
+                values = torch.stack(value_steps)
+                distribution = torch.distributions.Categorical(logits=logits)
+                log_probabilities = distribution.log_prob(sequence.actions)
+                ratios = (log_probabilities - sequence.old_log_probabilities.detach()).exp()
+                unclipped = ratios * advantages
+                clipped = ratios.clamp(
+                    1 - self.config.clip_ratio,
+                    1 + self.config.clip_ratio,
+                ) * advantages
+                policy_terms.append(-torch.minimum(unclipped, clipped).mean() * weight)
+                value_terms.append(nn.functional.mse_loss(values, sequence.returns) * weight)
+                entropy_terms.append(distribution.entropy().mean() * weight)
+            policy_loss = torch.stack(policy_terms).sum()
+            value_loss = torch.stack(value_terms).sum()
+            entropy = torch.stack(entropy_terms).sum()
+            loss = (
+                policy_loss
+                + self.config.value_weight * value_loss
+                - self.config.entropy_weight * entropy
+            )
+            self.optimizer.zero_grad(set_to_none=True)
+            loss.backward()
+            nn.utils.clip_grad_norm_(self.parameters(), self.config.gradient_clip_norm)
+            self.optimizer.step()
+            final_metrics = {
+                "loss": float(loss.detach()),
+                "policy_loss": float(policy_loss.detach()),
+                "value_loss": float(value_loss.detach()),
+                "entropy": float(entropy.detach()),
+                "update_epochs": float(self.config.update_epochs),
+                "advantage_mean": float(advantage_mean.detach()),
+                "advantage_std": float(advantage_scale.detach()),
+            }
+        return final_metrics
