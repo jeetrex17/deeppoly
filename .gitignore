@@ -9,3 +9,5 @@ mnist/
 *.o
 .DS_Store
 compile_commands.json
+__pycache__/
+*.py[cod]

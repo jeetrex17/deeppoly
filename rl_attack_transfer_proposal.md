@@ -8,6 +8,15 @@ Do RL-generated adversarial attack policies generalize across different neural n
 ### Why This Matters
 Transferability of adversarial examples is well-studied for gradient-based attacks (FGSM, PGD, C&W), but **no prior work has tested whether RL-discovered perturbation strategies transfer across architectures**. If RL-learned attacks transfer, they pose a more practical black-box threat. If they don't, it reveals architecture-specific vulnerabilities in RL policies.
 
+### Two required conditions
+
+The experiment separates two meanings of “transfer”:
+
+1. **Frozen transfer (the PDF protocol):** train the DQN on victim A, freeze its complete checkpoint, and evaluate the same policy on victim B. No optimizer, replay-buffer, epsilon, or policy parameters may change.
+2. **Continual transfer:** clone the exact source checkpoint and continue DQN updates using a disjoint target-adaptation split from victim B. Victim A and victim B remain frozen. Evaluate the adapted policy on B and re-evaluate A to quantify target gain and source forgetting.
+
+Both branches use the same clean-correct evaluation cohort, raw-pixel L-infinity threat model, query budget, deterministic signed patch actions, and policy/victim state digests. A negative transfer result is valid; the protocol, not a preselected success rate, is the research result.
+
 ### Methodology
 
 **Phase 1 — Train target classifiers (CIFAR-10)**
@@ -44,4 +53,3 @@ Freeze the trained policy, run inference on all 3 models on held-out images:
 2. Analysis of whether RL policies discover architecture-agnostic or architecture-specific perturbation strategies
 3. Query-efficiency comparison across transfer settings
 4. Open-source codebase for reproducible RL adversarial attack research
-

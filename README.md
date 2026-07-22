@@ -17,6 +17,16 @@ This repo implements two approaches: **certified training** (DeepPoly bound prop
 - **`mnist_rotation_attacks.ipynb`** — Empirical rotation attacks on a simple MLP (grid search over angles, not formal certification).
 
 - **`rl_attack_transfer.ipynb`** — DQN-based patch attack on CIFAR-10 (pretrained ResNet/ViT). Tests whether RL-discovered perturbation policies transfer across architectures (CNN → ResNet → ViT).
+- **`rl_transfer/`** — Tested implementation of the PDF experiment. It trains source and target victims, learns a score-only DQN policy on the source, and compares byte-preserved frozen transfer with continual target adaptation. Victims stay frozen in both branches.
+
+Run a deterministic CPU smoke experiment (no dataset download required):
+
+```bash
+python -m rl_transfer.cli --output output/rl_transfer/smoke.json
+python -m unittest discover -s tests -v
+```
+
+The implementation uses raw `[0, 1]` pixels, signed patch actions, an explicit L-infinity budget, clean-correct denominators, exact query accounting, and full DQN checkpoints. The JSON report records policy/victim digests so the frozen condition is auditable.
 
 - **`speech_adversarial_attack.ipynb`** — PGD attack on a Hugging Face ASR model (waveform perturbation, L∞ bound, CTC loss).
 
