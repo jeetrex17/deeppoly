@@ -16,17 +16,21 @@ This repo implements two approaches: **certified training** (DeepPoly bound prop
 
 - **`mnist_rotation_attacks.ipynb`** — Empirical rotation attacks on a simple MLP (grid search over angles, not formal certification).
 
-- **`rl_attack_transfer.ipynb`** — DQN-based patch attack on CIFAR-10 (pretrained ResNet/ViT). Tests whether RL-discovered perturbation policies transfer across architectures (CNN → ResNet → ViT).
-- **`rl_transfer/`** — Tested implementation of the PDF experiment. It trains source and target victims, learns a score-only DQN policy on the source, and compares byte-preserved frozen transfer with continual target adaptation. Victims stay frozen in both branches.
+- **`rl_attack_transfer.ipynb`** — Legacy DQN prototype retained for provenance; it is not the research evaluation surface.
+- **`notebooks/rl_cross_victim_pilot.ipynb`** — Thin package-backed notebook for protocol inspection, smoke execution, ASR/query analysis, and action diagnostics.
+- **`rl_transfer/`** — Tested cross-victim research harness. The feed-forward DQN is retained as a baseline; the primary method is a recurrent policy trained across source victim families and frozen on held-out families.
+- **`docs/research/rl_cross_victim_research_plan.pdf`** — Canonical 12-page research and publication plan.
 
 Run a deterministic CPU smoke experiment (no dataset download required):
 
 ```bash
 python -m rl_transfer.cli --output output/rl_transfer/smoke.json
-python -m unittest discover -s tests -v
+python -m rl_transfer.cli research-smoke
+python -m rl_transfer.cli validate-full
+python -m pytest -q --cov=rl_transfer --cov-fail-under=80
 ```
 
-The implementation uses raw `[0, 1]` pixels, signed patch actions, an explicit L-infinity budget, clean-correct denominators, exact query accounting, and full DQN checkpoints. The JSON report records policy/victim digests so the frozen condition is auditable.
+The research smoke exercises population scheduling, GroupDRO weights, recurrent inference-time context, a strict total query budget, raw `[0, 1]` projection, per-call traces, and persistent policy digests. It is explicitly marked `research_valid: false`; the ImageNet nested leave-one-family-out config describes the paper-scale run but is never executed in CI.
 
 - **`speech_adversarial_attack.ipynb`** — PGD attack on a Hugging Face ASR model (waveform perturbation, L∞ bound, CTC loss).
 

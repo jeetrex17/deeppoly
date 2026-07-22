@@ -11,3 +11,6 @@ mnist/
 compile_commands.json
 __pycache__/
 *.py[cod]
+*.egg-info/
+.coverage
+tmp/

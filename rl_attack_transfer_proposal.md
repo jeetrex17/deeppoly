@@ -6,50 +6,54 @@
 Do RL-generated adversarial attack policies generalize across different neural network architectures (CNN → ResNet → ViT), or do they overfit to specific architectures?
 
 ### Why This Matters
-Transferability of adversarial examples is well-studied for gradient-based attacks (FGSM, PGD, C&W), but **no prior work has tested whether RL-discovered perturbation strategies transfer across architectures**. If RL-learned attacks transfer, they pose a more practical black-box threat. If they don't, it reveals architecture-specific vulnerabilities in RL policies.
+Transferability of adversarial examples is well-studied for gradient-based attacks. RL has also been used for attack augmentation, surrogate weighting, and per-victim black-box attackers. The narrower open question is whether one recurrent direct-attack policy can be trained across source victim families, frozen, and reused without parameter updates on completely held-out architecture families.
 
 ### Two required conditions
 
 The experiment separates two meanings of “transfer”:
 
-1. **Frozen transfer (the PDF protocol):** train the DQN on victim A, freeze its complete checkpoint, and evaluate the same policy on victim B. No optimizer, replay-buffer, epsilon, or policy parameters may change.
-2. **Continual transfer:** clone the exact source checkpoint and continue DQN updates using a disjoint target-adaptation split from victim B. Victim A and victim B remain frozen. Evaluate the adapted policy on B and re-evaluate A to quantify target gain and source forgetting.
+1. **T1 frozen score-based transfer (primary):** train a recurrent PPO policy across a population of source victim families, freeze its complete persistent state, and evaluate it on an outer held-out family. Its GRU hidden state may change within an episode; parameters, optimizer, normalization, action catalog, and hyperparameters may not.
+2. **T3 limited adaptation (comparison):** clone the exact frozen checkpoint and permit a declared target update budget on a disjoint adaptation split. Re-evaluate both source and target families to quantify target gain and source forgetting.
 
 Both branches use the same clean-correct evaluation cohort, raw-pixel L-infinity threat model, query budget, deterministic signed patch actions, and policy/victim state digests. A negative transfer result is valid; the protocol, not a preselected success rate, is the research result.
 
 ### Methodology
 
-**Phase 1 — Train target classifiers (CIFAR-10)**
-- Simple CNN (3-layer ConvNet)
-- ResNet-18
-- ViT-tiny
+**Phase 1 - Register victims and lock family holdouts**
+- CIFAR-10/100 for development; ImageNet-1K for the main result
+- Classical CNN, modern CNN, transformer, and hierarchical-transformer families
+- Nested leave-one-family-out evaluation with separate source-family validation
 
-**Phase 2 — RL attack environment**
-- State: current patch noise levels (64 patches = 8×8 grid) + confidence + step count
-- Actions: pick which patch to perturb (64 discrete actions)
-- Reward: +10 if classifier misclassifies, −0.1 per patch touched, −confidence penalty otherwise
-- Episode: up to 20 steps
+**Phase 2 - Audited black-box environment**
+- T1 observations: ranks, entropy, normalized score deltas, remaining budget, and action history
+- Architecture-independent patch and DCT action catalogs
+- Raw-pixel L-infinity projection after every action
+- Initialization and failed calls included in the total query budget
 
-**Phase 3 — Train RL agent (DQN) on CNN only**
-- 500 episodes, ε-greedy (1.0 → 0.01)
-- Track success rate, L2 perturbation, queries per episode
+**Phase 3 - Population-train the recurrent attacker**
+- Recurrent PPO with hidden-state victim-context inference
+- Balanced source-family episodes
+- Naive pooled and GroupDRO objectives as paired variants
+- Feed-forward DQN retained as an RLAB-style baseline
 
-**Phase 4 — Transferability testing**
-Freeze the trained policy, run inference on all 3 models on held-out images:
+**Phase 4 - Frozen held-out-family evaluation**
+Freeze the complete policy bundle and run it directly on victims from the outer held-out family:
 
-| Metric | CNN (surrogate) | ResNet (transfer) | ViT (transfer) |
-|--------|:---:|:---:|:---:|
-| Attack success rate | | | |
-| Avg L2 perturbation | | | |
-| Avg queries used | | | |
+| Metric | Reporting rule |
+|--------|----------------|
+| ASR/query AUC | Macro-average by target model, then family |
+| ASR at fixed budgets | 25, 100, and 500 total calls with 95% intervals |
+| Queries to success | Treat failures as censored |
+| Distortion | L-infinity, L2, LPIPS, and valid-image rate |
 
-**Phase 5 — Ablation studies**
-- Vary query budget (5/10/20/50)
-- Vary perturbation magnitude
-- Test JPEG compression robustness
+**Phase 5 - Baselines and falsification tests**
+- Fixed/random/greedy strategies, matched feed-forward policy, DQN, Square Attack, and SimBA-DCT
+- Recurrent versus feed-forward versus shuffled-history controls
+- Single-source versus pooled versus GroupDRO training
+- T0, T1, T2, and T3 reported as separate threat-model blocks
 
 ### Expected Contributions
-1. First empirical study of RL-based adversarial attack transferability across CNN, ResNet, and ViT
+1. A leakage-resistant study of zero-update cross-victim generalization for a recurrent direct-attack policy
 2. Analysis of whether RL policies discover architecture-agnostic or architecture-specific perturbation strategies
 3. Query-efficiency comparison across transfer settings
 4. Open-source codebase for reproducible RL adversarial attack research

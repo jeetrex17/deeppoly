@@ -39,6 +39,24 @@ class TargetCNN(nn.Module):
         return self.net(inputs)
 
 
+class TinyPatchTransformer(nn.Module):
+    """Small patch-token transformer used only by the offline pilot."""
+
+    def __init__(self, classes: int = 10, width: int = 32) -> None:
+        super().__init__()
+        self.patch_embed = nn.Conv2d(3, width, kernel_size=4, stride=4)
+        layer = nn.TransformerEncoderLayer(width, nhead=4, dim_feedforward=64, batch_first=True, dropout=0.0)
+        self.encoder = nn.TransformerEncoder(layer, num_layers=1)
+        self.head = nn.Linear(width, classes)
+        nn.init.constant_(self.head.bias, 0.0)
+        with torch.no_grad():
+            self.head.bias[0] = 1.0
+
+    def forward(self, inputs: torch.Tensor) -> torch.Tensor:
+        tokens = self.patch_embed(inputs).flatten(2).transpose(1, 2)
+        return self.head(self.encoder(tokens).mean(dim=1))
+
+
 def freeze_model(model: nn.Module) -> nn.Module:
     model.eval()
     for parameter in model.parameters():

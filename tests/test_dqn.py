@@ -1,6 +1,7 @@
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 import numpy as np
 import torch
@@ -57,7 +58,9 @@ class DQNTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "agent.pt"
             agent.save(path)
-            restored = DQNAgent.load(path, device="cpu")
+            with mock.patch("rl_transfer.dqn.torch.load", wraps=torch.load) as loader:
+                restored = DQNAgent.load(path, device="cpu")
+            loader.assert_called_once_with(path, map_location="cpu", weights_only=True)
 
         self.assertEqual(restored.training_digest(), agent.training_digest())
         self.assertEqual(restored.epsilon, agent.epsilon)

@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "name": "cross-victim-week7-pilot",
+  "research_valid": false,
+  "dataset": "synthetic-offline-smoke",
+  "primary_threat_model": "T1-frozen-score-based",
+  "source_families": ["classical_cnn", "modern_cnn"],
+  "outer_holdout_family": "transformer",
+  "epsilon": 0.03137254901960784,
+  "step_size": 0.00784313725490196,
+  "query_budgets": [0, 5, 10],
+  "seeds": [7],
+  "episodes": 12,
+  "notes": "Infrastructure smoke only. It cannot support a research claim."
+}

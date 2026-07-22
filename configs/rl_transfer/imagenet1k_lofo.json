@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "name": "imagenet1k-nested-lofo",
+  "research_valid": true,
+  "dataset": "ImageNet-1K",
+  "stage_images": 1000,
+  "confirmation_images": 5000,
+  "primary_threat_model": "T1-frozen-score-based",
+  "outer_holdout_families": ["classical_cnn", "modern_cnn", "transformer", "hierarchical_transformer"],
+  "inner_source_family_validation": true,
+  "robust_stress_models": 2,
+  "epsilon_values": [0.01568627450980392, 0.03137254901960784],
+  "query_budgets": [0, 25, 100, 500],
+  "seeds": [1, 2, 3, 4, 5],
+  "required_baselines": ["dqn", "single_source_ppo", "naive_pooled_ppo", "groupdro_ppo", "fixed", "random", "greedy", "square", "simba_dct"],
+  "execute_in_ci": false
+}

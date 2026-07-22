@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "victims": [
+    {"victim_id": "resnet50", "family": "classical_cnn", "checkpoint_source": "torchvision:ResNet50_Weights.IMAGENET1K_V2", "preprocessing": "weight-enum", "clean_accuracy": 0.80858, "license": "BSD-3-Clause"},
+    {"victim_id": "densenet121", "family": "classical_cnn", "checkpoint_source": "torchvision:DenseNet121_Weights.IMAGENET1K_V1", "preprocessing": "weight-enum", "clean_accuracy": 0.75014, "license": "BSD-3-Clause"},
+    {"victim_id": "efficientnet_b0", "family": "modern_cnn", "checkpoint_source": "torchvision:EfficientNet_B0_Weights.IMAGENET1K_V1", "preprocessing": "weight-enum", "clean_accuracy": 0.77692, "license": "BSD-3-Clause"},
+    {"victim_id": "convnext_tiny", "family": "modern_cnn", "checkpoint_source": "torchvision:ConvNeXt_Tiny_Weights.IMAGENET1K_V1", "preprocessing": "weight-enum", "clean_accuracy": 0.8252, "license": "BSD-3-Clause"},
+    {"victim_id": "vit_b_16", "family": "transformer", "checkpoint_source": "torchvision:ViT_B_16_Weights.IMAGENET1K_V1", "preprocessing": "weight-enum", "clean_accuracy": 0.81072, "license": "BSD-3-Clause"},
+    {"victim_id": "swin_t", "family": "hierarchical_transformer", "checkpoint_source": "torchvision:Swin_T_Weights.IMAGENET1K_V1", "preprocessing": "weight-enum", "clean_accuracy": 0.81158, "license": "BSD-3-Clause"}
+  ]
+}
