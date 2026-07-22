@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "name": "cifar10-m4-study",
+  "research_valid": false,
+  "base_config": "configs/rl_transfer/cifar10_m4_iteration.json",
+  "output_dir": "output/rl_transfer/cifar10_m4_studies",
+  "seeds": [17, 29, 41],
+  "target_families": ["classical_cnn", "modern_cnn", "transformer"],
+  "minimum_seeds": 3,
+  "minimum_asr_gain": 0.01,
+  "minimum_auc_gain": 0.005,
+  "entropy_min": 0.1,
+  "entropy_max": 0.95
+}

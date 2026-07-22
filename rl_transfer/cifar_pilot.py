@@ -1,6 +1,7 @@
 from dataclasses import asdict, dataclass, replace
 from collections import Counter
 import hashlib
+import inspect
 import json
 import math
 from pathlib import Path
@@ -15,20 +16,25 @@ from torch import nn
 from torch.utils.data import DataLoader, Dataset, Subset
 
 from .artifacts import (
+    exclusive_file_lock,
     load_model_checkpoint,
     load_recurrent_checkpoint,
     save_model_checkpoint,
     save_recurrent_checkpoint,
     sha256_file,
 )
-from .baselines import FixedActionPolicy, RandomActionPolicy
-from .cifar_models import build_cifar_victims
+from .baselines import BanditActionPolicy, FixedActionPolicy, RandomActionPolicy
+from .cifar_models import build_cifar_victim_population
 from .config import AttackConfig
 from .models import freeze_model
 from .recurrent import PPOConfig, RecurrentAttackPolicy
 from .reproducibility import seed_everything
 from .research_metrics import AttackOutcome, asr_at_budgets, asr_query_auc
-from .research_protocol import run_frozen_episode, train_population_policy
+from .research_protocol import (
+    run_frozen_episode,
+    run_score_greedy_episode,
+    train_population_policy,
+)
 from .results import ResearchResultRow, write_jsonl
 from .runtime import resolve_device
 
@@ -124,6 +130,13 @@ class MacPilotConfig:
     num_workers: int
     hidden_dim: int
     victim_learning_rate: float
+    target_family: str = "transformer"
+    source_instances_per_family: int = 1
+    victim_profile: str = "pilot"
+    reward_mode: str = "legacy"
+    margin_reward_scale: float = 1.0
+    terminal_success_bonus: float = 10.0
+    query_penalty: float = 0.05
 
     def __post_init__(self) -> None:
         counts = (
@@ -142,7 +155,7 @@ class MacPilotConfig:
             raise ValueError("image counts must be positive multiples of ten")
         if sum(counts[:3]) > 50_000 or self.outer_test_images > 1_000:
             raise ValueError("Mac pilot split exceeds its bounded data budget")
-        if not 1 <= self.victim_epochs <= 10 or not 1 <= self.policy_episodes <= 1_000:
+        if not 1 <= self.victim_epochs <= 30 or not 1 <= self.policy_episodes <= 2_000:
             raise ValueError("Mac pilot training exceeds its bounded run budget")
         if not 1 <= self.policy_update_block <= self.policy_episodes:
             raise ValueError("policy update block must fit within the episode budget")
@@ -156,6 +169,22 @@ class MacPilotConfig:
             raise ValueError("learning rates must be positive")
         if self.policy_entropy_weight < 0 or not 1 <= self.policy_update_epochs <= 10:
             raise ValueError("invalid PPO update configuration")
+        if self.target_family not in {"classical_cnn", "modern_cnn", "transformer"}:
+            raise ValueError("target_family must come from the CIFAR victim registry")
+        if not 1 <= self.source_instances_per_family <= 3:
+            raise ValueError("source_instances_per_family must be between one and three")
+        if self.victim_profile not in {"pilot", "research"}:
+            raise ValueError("victim_profile must be 'pilot' or 'research'")
+        AttackConfig(
+            epsilon=self.epsilon,
+            step_size=self.step_size,
+            grid_size=self.grid_size,
+            max_queries=self.query_budget,
+            reward_mode=self.reward_mode,
+            margin_reward_scale=self.margin_reward_scale,
+            terminal_success_bonus=self.terminal_success_bonus,
+            query_penalty=self.query_penalty,
+        )
 
     @classmethod
     def from_json(cls, path: Path) -> "MacPilotConfig":
@@ -186,6 +215,82 @@ def _code_digest() -> str:
         hasher.update(path.name.encode("utf-8"))
         hasher.update(path.read_bytes())
     return hasher.hexdigest()
+
+
+def _victim_cache_digest(
+    config: MacPilotConfig,
+    split_digest: str,
+    dataset_version: str,
+    victim_code_digest: str,
+    device_type: str,
+) -> str:
+    """Fingerprint only inputs that can change victim fitting.
+
+    Target-family selection and policy hyperparameters are intentionally absent,
+    allowing a study seed to reuse the same fitted victim bank across every
+    leave-one-family-out fold.
+    """
+
+    payload = _victim_cache_contract(
+        config,
+        split_digest,
+        dataset_version,
+        victim_code_digest,
+        device_type,
+    )
+    encoded = json.dumps(payload, sort_keys=True, separators=(",", ":"))
+    return hashlib.sha256(encoded.encode("utf-8")).hexdigest()
+
+
+def _victim_cache_contract(
+    config: MacPilotConfig,
+    split_digest: str,
+    dataset_version: str,
+    victim_code_digest: str,
+    device_type: str,
+) -> dict[str, object]:
+    return {
+        "schema_version": 1,
+        "dataset": config.dataset,
+        "dataset_version": dataset_version,
+        "split_digest": split_digest,
+        "seed": config.seed,
+        "victim_profile": config.victim_profile,
+        "victim_train_images": config.victim_train_images,
+        "source_validation_images": config.source_validation_images,
+        "victim_epochs": config.victim_epochs,
+        "victim_learning_rate": config.victim_learning_rate,
+        "batch_size": config.batch_size,
+        "num_workers": config.num_workers,
+        "victim_code_digest": victim_code_digest,
+        "device_type": device_type,
+        "torch_version": torch.__version__,
+    }
+
+
+def _victim_code_digest() -> str:
+    hasher = hashlib.sha256()
+    hasher.update((Path(__file__).parent / "cifar_models.py").read_bytes())
+    hasher.update((Path(__file__).parent / "reproducibility.py").read_bytes())
+    hasher.update(inspect.getsource(_train_classifier).encode("utf-8"))
+    return hasher.hexdigest()
+
+
+def _git_worktree_state() -> dict[str, object]:
+    try:
+        result = subprocess.run(
+            ("git", "status", "--porcelain=v1", "--untracked-files=all"),
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+    except (OSError, subprocess.CalledProcessError):
+        return {"dirty": None, "status_sha256": None}
+    status = result.stdout
+    return {
+        "dirty": bool(status),
+        "status_sha256": hashlib.sha256(status.encode("utf-8")).hexdigest(),
+    }
 
 
 def _write_json(path: Path, payload: dict[str, object]) -> None:
@@ -230,9 +335,13 @@ def _train_classifier(
     indices: Sequence[int],
     config: MacPilotConfig,
     device: torch.device,
+    training_seed: int,
     progress: Callable[[str], None],
 ) -> tuple[dict[str, float], ...]:
-    generator = torch.Generator().manual_seed(config.seed)
+    torch.manual_seed(training_seed)
+    if device.type == "mps":
+        torch.mps.manual_seed(training_seed)
+    generator = torch.Generator().manual_seed(training_seed)
     loader = DataLoader(
         Subset(dataset, indices),
         batch_size=config.batch_size,
@@ -242,7 +351,7 @@ def _train_classifier(
     )
     optimizer = torch.optim.AdamW(model.parameters(), lr=config.victim_learning_rate)
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=config.victim_epochs)
-    augmentation_generator = torch.Generator().manual_seed(config.seed + 50_000)
+    augmentation_generator = torch.Generator().manual_seed(training_seed + 50_000)
     history: list[dict[str, float]] = []
     model.train()
     for epoch in range(config.victim_epochs):
@@ -296,6 +405,7 @@ def _evaluate_methods(
     indices: Sequence[int],
     attack: AttackConfig,
     seed: int,
+    target_family: str,
     progress: Callable[[str], None],
 ) -> tuple[list[ResearchResultRow], list[dict[str, object]], dict[str, object]]:
     victim_id, victim = target
@@ -304,6 +414,8 @@ def _evaluate_methods(
         "groupdro_recurrent_ppo_stochastic": (policy, False),
         "fixed_action": (FixedActionPolicy(0, attack.action_dim), True),
         "random_action": (RandomActionPolicy(attack.action_dim, seed), False),
+        "bandit_action": (BanditActionPolicy(attack.action_dim, seed), True),
+        "score_greedy": (None, True),
     }
     rows: list[ResearchResultRow] = []
     traces: list[dict[str, object]] = []
@@ -314,27 +426,40 @@ def _evaluate_methods(
         torch.manual_seed(seed + 100_000 + method_offset)
         if torch.backends.mps.is_available():
             torch.mps.manual_seed(seed + 100_000 + method_offset)
-        before = attack_policy.persistent_digest()
+        before = attack_policy.persistent_digest() if attack_policy is not None else None
         outcomes: list[AttackOutcome] = []
         method_rows: list[ResearchResultRow] = []
         for image_index, ((image, label), dataset_index) in enumerate(zip(samples, indices)):
             sample_id = f"cifar10:test:{dataset_index}"
-            result = run_frozen_episode(
-                attack_policy,
-                victim,
-                image,
-                label,
-                sample_id,
-                victim_id,
-                "transformer",
-                attack,
-                deterministic=deterministic,
-            )
+            if attack_policy is None:
+                result = run_score_greedy_episode(
+                    victim,
+                    image,
+                    label,
+                    sample_id,
+                    victim_id,
+                    target_family,
+                    attack,
+                    seed + method_offset,
+                )
+                before = before or result.policy_digest_before
+            else:
+                result = run_frozen_episode(
+                    attack_policy,
+                    victim,
+                    image,
+                    label,
+                    sample_id,
+                    victim_id,
+                    target_family,
+                    attack,
+                    deterministic=deterministic,
+                )
             outcomes.append(AttackOutcome(result.clean_correct, result.query_to_success))
             row = ResearchResultRow(
                 sample_id=sample_id,
                 victim_id=victim_id,
-                victim_family="transformer",
+                victim_family=target_family,
                 method=method,
                 threat_model="T1",
                 seed=seed,
@@ -365,12 +490,33 @@ def _evaluate_methods(
                 (count / action_total) * math.log(count / action_total)
                 for count in action_counts.values()
             ) / math.log(attack.action_dim)
-        after = attack_policy.persistent_digest()
+        after = (
+            attack_policy.persistent_digest()
+            if attack_policy is not None
+            else method_rows[-1].policy_digest
+        )
+        eligible_sample_ids = sorted(
+            row.sample_id for row in method_rows if row.clean_correct
+        )
+        eligible_digest = hashlib.sha256(
+            "\n".join(eligible_sample_ids).encode("utf-8")
+        ).hexdigest()
         summary[method] = {
             "eligible": eligible,
             "successes": sum(row.success for row in method_rows),
             "asr_at_budgets": curve,
             "asr_query_auc": auc,
+            "query_budget": attack.max_queries,
+            "max_total_target_calls": max(
+                (row.total_target_calls for row in method_rows),
+                default=0,
+            ),
+            "initialization_included": all(
+                result_trace["query_trace"]
+                and result_trace["query_trace"][0]["purpose"] == "initialization"
+                for result_trace in traces[-len(method_rows):]
+            ),
+            "eligible_sample_ids_sha256": eligible_digest,
             "policy_digest_before": before,
             "policy_digest_after": after,
             "frozen": before == after,
@@ -407,6 +553,21 @@ def run_cifar_pilot_from_datasets(
         config.seed,
     )
     code_digest = _code_digest()
+    victim_code_digest = _victim_code_digest()
+    victim_cache_contract = _victim_cache_contract(
+        config,
+        split.digest,
+        dataset_version,
+        victim_code_digest,
+        device.type,
+    )
+    victim_cache_digest = _victim_cache_digest(
+        config,
+        split.digest,
+        dataset_version,
+        victim_code_digest,
+        device.type,
+    )
     fingerprint_source = f"{config.digest()}:{split.digest}:{code_digest}"
     fingerprint = hashlib.sha256(fingerprint_source.encode()).hexdigest()
     run_dir = Path(config.output_dir) / fingerprint[:12]
@@ -422,6 +583,13 @@ def run_cifar_pilot_from_datasets(
         "config": asdict(config),
         "config_digest": config.digest(),
         "split_digest": split.digest,
+        "seed": config.seed,
+        "target_family": config.target_family,
+        "source_families": [
+            family
+            for family in ("classical_cnn", "modern_cnn", "transformer")
+            if family != config.target_family
+        ],
         "dataset": {"name": config.dataset, "version": dataset_version},
         "device": selection.as_dict(),
         "runtime": {
@@ -430,6 +598,7 @@ def run_cifar_pilot_from_datasets(
             "torch": torch.__version__,
             "git_revision": _git_revision(),
             "code_digest": code_digest,
+            "git_worktree": _git_worktree_state(),
             "mps_built": torch.backends.mps.is_built(),
             "mps_available": torch.backends.mps.is_available(),
             "determinism": (
@@ -438,58 +607,111 @@ def run_cifar_pilot_from_datasets(
                 else "deterministic algorithms requested with warn_only"
             ),
         },
+        "victim_cache_digest": victim_cache_digest,
+        "victim_cache_contract": victim_cache_contract,
+        "victim_code_digest": victim_code_digest,
     }
     _write_json(run_dir / "manifest.json", manifest)
-    victims = build_cifar_victims(config.seed)
+    instance_counts = {
+        family: (
+            1 if family == config.target_family else config.source_instances_per_family
+        )
+        for family in ("classical_cnn", "modern_cnn", "transformer")
+    }
+    victim_population = build_cifar_victim_population(
+        config.seed,
+        instance_counts,
+        profile=config.victim_profile,
+    )
     victim_metrics: dict[str, object] = {}
-    for family, (victim_id, model) in victims.items():
-        model.to(device)
-        checkpoint_path = run_dir / "victims" / f"{victim_id}.pt"
-        if resume and checkpoint_path.is_file() and checkpoint_path.with_suffix(".pt.sha256").is_file():
-            report(f"loading {family} victim checkpoint")
-            metadata = load_model_checkpoint(checkpoint_path, model, device)
-            _checkpoint_matches(metadata, fingerprint)
-            history = metadata["history"]
-            resumed = True
-        else:
-            report(f"training {family} victim ({victim_id})")
-            history = _train_classifier(
+    victim_instance_metrics: dict[str, list[dict[str, object]]] = {}
+    victim_cache_dir = Path(config.output_dir) / "victim_cache" / victim_cache_digest[:12]
+    for family, instances in victim_population.items():
+        family_metrics: list[dict[str, object]] = []
+        for instance_index, (victim_id, model) in enumerate(instances):
+            model.to(device)
+            training_seed = int.from_bytes(
+                hashlib.sha256(f"victim-fit-v1:{victim_id}".encode()).digest()[:8],
+                "big",
+            ) % (2**63 - 1)
+            checkpoint_path = victim_cache_dir / f"{victim_id}.pt"
+            checksum_path = checkpoint_path.with_suffix(".pt.sha256")
+            lock_path = checkpoint_path.with_suffix(".pt.lock")
+            with exclusive_file_lock(lock_path):
+                if resume and checkpoint_path.is_file() and checksum_path.is_file():
+                    report(f"loading {family} victim instance {instance_index} checkpoint")
+                    metadata = load_model_checkpoint(checkpoint_path, model, device)
+                    _checkpoint_matches(metadata, victim_cache_digest)
+                    if metadata.get("training_seed") != training_seed:
+                        raise ValueError("victim checkpoint training seed mismatch")
+                    if metadata.get("cache_contract") != victim_cache_contract:
+                        raise ValueError("victim checkpoint cache contract mismatch")
+                    history = metadata["history"]
+                    resumed = True
+                else:
+                    report(f"training {family} victim instance {instance_index} ({victim_id})")
+                    history = _train_classifier(
+                        model,
+                        train_dataset,
+                        split.victim_fit,
+                        config,
+                        device,
+                        training_seed,
+                        report,
+                    )
+                    metadata = {
+                        "fingerprint": victim_cache_digest,
+                        "cache_contract": victim_cache_contract,
+                        "family": family,
+                        "instance_index": instance_index,
+                        "training_seed": training_seed,
+                        "history": history,
+                    }
+                    save_model_checkpoint(checkpoint_path, model, metadata)
+                    resumed = False
+            validation_accuracy = _classifier_accuracy(
                 model,
                 train_dataset,
-                split.victim_fit,
-                config,
+                split.source_validation,
+                config.batch_size,
+                config.num_workers,
                 device,
-                report,
             )
-            metadata = {"fingerprint": fingerprint, "family": family, "history": history}
-            save_model_checkpoint(checkpoint_path, model, metadata)
-            resumed = False
-        validation_accuracy = _classifier_accuracy(
-            model,
-            train_dataset,
-            split.source_validation,
-            config.batch_size,
-            config.num_workers,
-            device,
-        )
-        freeze_model(model)
-        report(f"{family} validation accuracy: {validation_accuracy:.3f}")
-        victim_metrics[family] = {
-            "victim_id": victim_id,
-            "checkpoint": str(checkpoint_path),
-            "checkpoint_sha256": sha256_file(checkpoint_path),
-            "history": history,
-            "source_validation_accuracy": validation_accuracy,
-            "resumed": resumed,
-        }
+            freeze_model(model)
+            report(
+                f"{family} instance {instance_index} validation accuracy: "
+                f"{validation_accuracy:.3f}"
+            )
+            metrics = {
+                "victim_id": victim_id,
+                "family": family,
+                "instance_index": instance_index,
+                "training_seed": training_seed,
+                "checkpoint": str(checkpoint_path),
+                "checkpoint_sha256": sha256_file(checkpoint_path),
+                "history": history,
+                "source_validation_accuracy": validation_accuracy,
+                "resumed": resumed,
+            }
+            family_metrics.append(metrics)
+        victim_instance_metrics[family] = family_metrics
+        victim_metrics[family] = family_metrics[0]
     attack = AttackConfig(
         epsilon=config.epsilon,
         step_size=config.step_size,
         grid_size=config.grid_size,
         max_queries=config.query_budget,
+        reward_mode=config.reward_mode,
+        margin_reward_scale=config.margin_reward_scale,
+        terminal_success_bonus=config.terminal_success_bonus,
+        query_penalty=config.query_penalty,
     )
     policy_path = run_dir / "policy.pt"
-    source_victims = {family: victims[family] for family in ("classical_cnn", "modern_cnn")}
+    source_victims = {
+        family: instances
+        for family, instances in victim_population.items()
+        if family != config.target_family
+    }
     policy_samples = _dataset_samples(train_dataset, split.policy_train)
     if resume and policy_path.is_file() and policy_path.with_suffix(".pt.sha256").is_file():
         report("loading recurrent policy checkpoint")
@@ -532,6 +754,10 @@ def run_cifar_pilot_from_datasets(
             initial_family_weights=(
                 training_blocks[-1]["family_weights"] if training_blocks else None
             ),
+            episode_offset=completed_episodes,
+            initial_instance_offsets=(
+                training_blocks[-1]["instance_offsets"] if training_blocks else None
+            ),
         )
         training_blocks.append(block)
         completed_episodes += block_episodes
@@ -548,7 +774,30 @@ def run_cifar_pilot_from_datasets(
         "episodes": config.policy_episodes,
         "completed_episodes": completed_episodes,
         "trained_episodes": sum(int(block["trained_episodes"]) for block in training_blocks),
+        "policy_sample_pool_size": len(policy_samples),
+        "unique_policy_samples_visited": len(
+            {
+                int(sample_index)
+                for block in training_blocks
+                for sample_index in block.get("sample_indices", [])
+            }
+        ),
         "source_calls": sum(int(block["source_calls"]) for block in training_blocks),
+        "source_calls_by_family": {
+            family: sum(
+                int(block.get("source_calls_by_family", {}).get(family, 0))
+                for block in training_blocks
+            )
+            for family in source_victims
+        },
+        "source_calls_by_victim": {
+            victim_id: sum(
+                int(block.get("source_calls_by_victim", {}).get(victim_id, 0))
+                for block in training_blocks
+            )
+            for instances in source_victims.values()
+            for victim_id, _ in instances
+        },
         "blocks": training_blocks,
         "final_family_weights": training_blocks[-1]["family_weights"],
     }
@@ -566,21 +815,25 @@ def run_cifar_pilot_from_datasets(
     target_samples = _dataset_samples(test_dataset, split.outer_test)
     rows, traces, evaluation = _evaluate_methods(
         policy,
-        victims["transformer"],
+        victim_population[config.target_family][0],
         target_samples,
         split.outer_test,
         attack,
         config.seed,
+        config.target_family,
         report,
     )
     write_jsonl(run_dir / "results.jsonl", rows)
     (run_dir / "query_traces.jsonl").write_text(
         "".join(json.dumps(trace, sort_keys=True) + "\n" for trace in traces)
     )
+    if _code_digest() != code_digest:
+        raise RuntimeError("package code changed during the pilot; discard and rerun")
     manifest.update(
         {
             "status": "complete",
             "victims": victim_metrics,
+            "victim_instances": victim_instance_metrics,
             "policy": {
                 "checkpoint": str(policy_path),
                 "checkpoint_sha256": sha256_file(policy_path),
@@ -595,7 +848,10 @@ def run_cifar_pilot_from_datasets(
                     "transformer": 0.40,
                 },
                 "passed": all(
-                    float(victim_metrics[family]["source_validation_accuracy"]) >= threshold
+                    all(
+                        float(metrics["source_validation_accuracy"]) >= threshold
+                        for metrics in victim_instance_metrics[family]
+                    )
                     for family, threshold in {
                         "classical_cnn": 0.60,
                         "modern_cnn": 0.50,
@@ -604,7 +860,7 @@ def run_cifar_pilot_from_datasets(
                 ),
             },
             "target_test_accuracy": _classifier_accuracy(
-                victims["transformer"][1],
+                victim_population[config.target_family][0][1],
                 test_dataset,
                 split.outer_test,
                 config.batch_size,

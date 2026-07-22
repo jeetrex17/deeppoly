@@ -33,6 +33,18 @@ class MacNotebookTests(unittest.TestCase):
         self.assertEqual({metrics["eligible"] for metrics in evaluation.values()}, {99})
         self.assertTrue(all(metrics["frozen"] for metrics in evaluation.values()))
 
+    def test_multi_fold_study_notebook_is_thin_and_package_backed(self) -> None:
+        notebook = json.loads(Path("notebooks/cifar10_m4_study.ipynb").read_text())
+        code = "\n".join(
+            "".join(cell.get("source", []))
+            for cell in notebook["cells"]
+            if cell["cell_type"] == "code"
+        )
+        self.assertEqual(notebook["nbformat"], 4)
+        self.assertIn("rl_transfer.cifar_study_cli", code)
+        self.assertIn("promotion_gate", code)
+        self.assertNotIn("class RecurrentAttackPolicy", code)
+
 
 if __name__ == "__main__":
     unittest.main()

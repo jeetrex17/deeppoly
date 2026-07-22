@@ -4,6 +4,7 @@ import numpy as np
 import torch
 
 from .config import AttackConfig
+from .rewards import confidence_margin, patch_environment_reward
 
 
 class EpisodeFinishedError(RuntimeError):
@@ -82,7 +83,7 @@ class PatchAttackEnv:
         return self._state()
 
     def _state(self) -> np.ndarray:
-        margin = self.true_probability - self.rival_probability
+        margin = confidence_margin(self.true_probability, self.rival_probability)
         remaining = 1.0 - self.steps / self.config.max_queries
         return np.concatenate((self.touched, np.array([self.true_probability, self.rival_probability, margin, remaining, float(self.clean_prediction == self.label), self.steps / self.config.max_queries], dtype=np.float32))).astype(np.float32)
 
@@ -111,11 +112,30 @@ class PatchAttackEnv:
         self.touched[row * self.config.grid_size + col] = 1.0
         self.steps += 1
         self.queries += 1
+        previous_true_probability = self.true_probability
+        previous_rival_probability = self.rival_probability
         prediction, self.true_probability, self.rival_probability = self._query(self.adv)
         success = prediction != self.label
         self.done = success or self.steps >= self.config.max_queries
-        reward = (10.0 - 0.2 * self.steps) if success else -0.05 - self.true_probability
-        return self._state(), float(reward), self.done, StepInfo(success=success, prediction=prediction, queries=self.queries, confidence_drop=self.clean_true_probability - self.true_probability)
+        previous_margin = confidence_margin(previous_true_probability, previous_rival_probability)
+        current_margin = confidence_margin(self.true_probability, self.rival_probability)
+        reward = patch_environment_reward(
+            previous_true_probability,
+            previous_rival_probability,
+            self.true_probability,
+            self.rival_probability,
+            success,
+            self.steps,
+            self.config,
+        )
+        return self._state(), float(reward), self.done, StepInfo(
+            success=success,
+            prediction=prediction,
+            queries=self.queries,
+            confidence_drop=self.clean_true_probability - self.true_probability,
+            margin_reduction=previous_margin - current_margin,
+            reward_mode=self.config.reward_mode,
+        )
 
     @property
     def adversarial_image(self) -> torch.Tensor:

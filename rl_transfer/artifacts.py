@@ -1,4 +1,6 @@
 from dataclasses import asdict
+from contextlib import contextmanager
+import fcntl
 import hashlib
 import json
 import os
@@ -23,6 +25,36 @@ def _sidecar_path(path: Path) -> Path:
     return path.with_suffix(path.suffix + ".sha256")
 
 
+@contextmanager
+def exclusive_file_lock(path: Path):
+    """Serialize checkpoint readers/writers across local study processes."""
+
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("a+b") as handle:
+        fcntl.flock(handle.fileno(), fcntl.LOCK_EX)
+        try:
+            yield
+        finally:
+            fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
+
+
+def _atomic_text_write(path: Path, value: str) -> None:
+    temporary_path: Path | None = None
+    try:
+        with tempfile.NamedTemporaryFile(
+            dir=path.parent,
+            suffix=".tmp",
+            mode="w",
+            delete=False,
+        ) as handle:
+            temporary_path = Path(handle.name)
+            handle.write(value)
+        os.replace(temporary_path, path)
+    finally:
+        if temporary_path is not None and temporary_path.exists():
+            temporary_path.unlink()
+
+
 def _atomic_torch_save(path: Path, payload: dict[str, object]) -> str:
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary_path: Path | None = None
@@ -35,7 +67,7 @@ def _atomic_torch_save(path: Path, payload: dict[str, object]) -> str:
         if temporary_path is not None and temporary_path.exists():
             temporary_path.unlink()
     digest = sha256_file(path)
-    _sidecar_path(path).write_text(digest + "\n")
+    _atomic_text_write(_sidecar_path(path), digest + "\n")
     return digest
 
 

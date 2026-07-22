@@ -89,6 +89,15 @@ class CIFARContractTests(unittest.TestCase):
         self.assertLessEqual(config.query_budget, 100)
         self.assertLessEqual(config.policy_episodes, 1000)
 
+    def test_iteration_config_enables_dense_rewards_and_source_population(self) -> None:
+        config = MacPilotConfig.from_json(
+            Path("configs/rl_transfer/cifar10_m4_iteration.json")
+        )
+        self.assertEqual(config.reward_mode, "margin_delta")
+        self.assertEqual(config.victim_profile, "research")
+        self.assertEqual(config.source_instances_per_family, 2)
+        self.assertEqual(config.grid_size, 4)
+
     def test_victim_registry_has_three_distinct_model_families(self) -> None:
         victims = build_cifar_victims(seed=7)
         self.assertEqual(set(victims), {"classical_cnn", "modern_cnn", "transformer"})
@@ -137,6 +146,24 @@ class CIFARContractTests(unittest.TestCase):
             self.assertTrue((run_dir / "policy.pt").is_file())
             self.assertTrue((run_dir / "results.jsonl").is_file())
             self.assertIn("groupdro_recurrent_ppo_stochastic", first["evaluation"])
+            first_seeds = {
+                instance["victim_id"]: instance["training_seed"]
+                for instances in first["victim_instances"].values()
+                for instance in instances
+            }
+            second_seeds = {
+                instance["victim_id"]: instance["training_seed"]
+                for instances in second["victim_instances"].values()
+                for instance in instances
+            }
+            self.assertEqual(first_seeds, second_seeds)
+            self.assertTrue(
+                all(
+                    instance["resumed"]
+                    for instances in second["victim_instances"].values()
+                    for instance in instances
+                )
+            )
 
 
 class RecurrentArtifactTests(unittest.TestCase):
@@ -151,6 +178,68 @@ class RecurrentArtifactTests(unittest.TestCase):
         self.assertEqual(payload["schema_version"], 1)
         self.assertEqual(policy.persistent_digest(), restored.persistent_digest())
         self.assertEqual(restored_metadata, metadata)
+
+
+class PopulationVictimTests(unittest.TestCase):
+    def test_family_schedule_round_robins_source_instances_and_audits_calls(self) -> None:
+        attack = AttackConfig(grid_size=1, max_queries=2)
+        policy = RecurrentAttackPolicy(8, attack.action_dim, hidden_dim=8, seed=3)
+        instances = (
+            ("source-a", freeze_model(TwoClassVictim())),
+            ("source-b", freeze_model(TwoClassVictim())),
+        )
+        metrics = train_population_policy(
+            policy,
+            {"classical_cnn": instances},
+            ((torch.full((3, 4, 4), 0.7), 0),),
+            attack,
+            episodes=4,
+            seed=3,
+        )
+        self.assertEqual(metrics["source_calls_by_family"]["classical_cnn"], 8)
+        self.assertEqual(metrics["source_calls_by_victim"], {"source-a": 4, "source-b": 4})
+
+    def test_rollout_blocks_continue_global_sample_and_instance_offsets(self) -> None:
+        attack = AttackConfig(grid_size=1, max_queries=2)
+        policy = RecurrentAttackPolicy(8, attack.action_dim, hidden_dim=8, seed=5)
+        instances = (
+            ("source-a", freeze_model(TwoClassVictim())),
+            ("source-b", freeze_model(TwoClassVictim())),
+        )
+        samples = tuple((torch.full((3, 4, 4), value), 0) for value in (0.7, 0.71, 0.72, 0.73))
+        first = train_population_policy(
+            policy,
+            {"classical_cnn": instances},
+            samples,
+            attack,
+            episodes=2,
+            seed=5,
+            episode_offset=0,
+        )
+        second = train_population_policy(
+            policy,
+            {"classical_cnn": instances},
+            samples,
+            attack,
+            episodes=2,
+            seed=7,
+            initial_family_weights=first["family_weights"],
+            episode_offset=2,
+            initial_instance_offsets=first["instance_offsets"],
+        )
+        self.assertEqual(first["sample_indices"], [0, 1])
+        self.assertEqual(second["sample_indices"], [2, 3])
+        self.assertEqual(first["source_calls_by_victim"], {"source-a": 2, "source-b": 2})
+        self.assertEqual(second["source_calls_by_victim"], {"source-a": 2, "source-b": 2})
+        self.assertEqual(second["unique_sample_count"], 2)
+        diagnostics = second["family_diagnostics"]["classical_cnn"]
+        self.assertEqual(diagnostics["scheduled_episodes"], 2)
+        self.assertEqual(diagnostics["eligible_episodes"], 2)
+        self.assertIn("episode_return", diagnostics)
+        self.assertIn("margin_reduction", diagnostics)
+        self.assertIn("groupdro_loss", diagnostics)
+        self.assertIn("weight_before", diagnostics)
+        self.assertIn("weight_after", diagnostics)
 
 
 @unittest.skipUnless(torch.backends.mps.is_available(), "MPS is not available")

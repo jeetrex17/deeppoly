@@ -54,6 +54,22 @@ The policy **was frozen** during target evaluation: its SHA-256 digest was uncha
 
 Read the full visual report in [docs/research/cifar10_m4_pilot_summary.md](docs/research/cifar10_m4_pilot_summary.md). The committed raw aggregate is [cifar10_m4_pilot_results.json](docs/research/cifar10_m4_pilot_results.json).
 
+## Upgraded cross-victim study
+
+The next iteration directly addresses the first pilot's failure modes:
+
+- dense confidence-margin rewards replace sparse true-class-score rewards;
+- two independently initialized victims are rotated inside each source family;
+- GroupDRO remains family-level and records calls for every source model;
+- all three leave-one-family-out directions are supported;
+- query-matched random and score-bandit controls are joined by a custom patch-based, SimBA-style score-greedy control;
+- three-seed aggregation uses paired Student-t intervals, minimum practical gains, per-seed entropy checks, and a fail-closed promotion gate;
+- every promotion input is revalidated for frozen policy digests, identical eligible samples, exact query budgets, and internally consistent ASR/AUC;
+- victim checkpoints are shared across folds with fitting-code/backend contracts, independent fit seeds, checksum verification, and writer locks;
+- every policy block records family/instance eligibility, successes, returns, margin reductions, GroupDRO losses, weights, and source calls.
+
+The corrected one-seed diagnostic and fresh-seed study are rerunnable with the commands below. Results generated before the score-greedy, RNG-provenance, and rollout-offset fixes are intentionally excluded because they are scientifically superseded.
+
 ## Run it locally
 
 ### Install
@@ -88,9 +104,28 @@ uv run python -m rl_transfer.cifar_cli \
 
 The runner detects MPS automatically, checkpoints every victim and policy block, and resumes only when the configuration, deterministic split, and package-code fingerprint match. Run artifacts and checkpoints are written to `output/rl_transfer/` and are intentionally not committed.
 
+### Three-fold diagnostic
+
+```bash
+uv run python -m rl_transfer.cifar_study_cli \
+  --config configs/rl_transfer/cifar10_m4_study_quick.json \
+  --device auto
+```
+
+### Three-seed study
+
+This is the longer resumable run. It evaluates all three held-out families for fresh seeds 17, 29, and 41; seed 7 is reserved for development diagnostics.
+
+```bash
+uv run python -m rl_transfer.cifar_study_cli \
+  --config configs/rl_transfer/cifar10_m4_study.json \
+  --device auto
+```
+
 ### Notebook and report
 
 - [notebooks/cifar10_mac_pilot.ipynb](notebooks/cifar10_mac_pilot.ipynb) — train or inspect an M4 run interactively.
+- [notebooks/cifar10_m4_study.ipynb](notebooks/cifar10_m4_study.ipynb) — inspect cross-fold, multi-seed aggregates and promotion gates.
 - [docs/research/cifar10_m4_pilot_summary.md](docs/research/cifar10_m4_pilot_summary.md) — rendered figures and result interpretation.
 - Regenerate the figures after recording a new manifest:
 
@@ -118,6 +153,8 @@ uv run python -m rl_transfer.pilot_report \
 The RL attacker is never allowed to train on, tune against, or update during evaluation on the held-out target family. Every target call—including initialization and failed attempts—counts toward the total target-query budget. Lower-budget results are computed from each same full attack trajectory rather than by giving separate runs more chances.
 
 The current pilot uses one dataset, one held-out model per family, and one seed. It should be expanded to multiple architecture instances, nested family-level selection, repeated seeds, and uncertainty reporting before making a general transferability claim.
+
+The upgraded study is still exploratory: it changes reward shaping, victim population size, and family weighting together, so it cannot attribute any improvement to one component without matched ablations. MPS determinism is requested in warning mode, but some operators remain nondeterministic; checkpoint hashes are therefore the exact artifact identity even when fit seeds match.
 
 ## References
 

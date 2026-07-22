@@ -14,7 +14,7 @@ from rl_transfer.cli import run_research_smoke, validate_full_config
 from rl_transfer.population import FamilyRobustWeights, balanced_family_schedule
 from rl_transfer.recurrent import PPOSequence, RecurrentAttackPolicy
 from rl_transfer.config import AttackConfig
-from rl_transfer.research_protocol import run_frozen_episode
+from rl_transfer.research_protocol import run_frozen_episode, run_score_greedy_episode
 from rl_transfer.registry import ExperimentSplit, VictimRegistry, VictimSpec
 from rl_transfer.research_metrics import AttackOutcome, asr_query_auc, asr_at_budgets
 from rl_transfer.results import ResearchResultRow
@@ -131,6 +131,22 @@ class CrossVictimResearchTests(unittest.TestCase):
         policy = RecurrentAttackPolicy(8, action_dim=2, hidden_dim=8)
         with self.assertRaises(ValueError):
             run_frozen_episode(policy, TwoClassVictim(), torch.full((3, 4, 4), 0.7), 0, "x", "v", "cnn", AttackConfig(grid_size=1, max_queries=2))
+
+    def test_score_greedy_baseline_is_frozen_query_bounded_and_projected(self) -> None:
+        result = run_score_greedy_episode(
+            TwoClassVictim(),
+            torch.full((3, 4, 4), 0.7),
+            0,
+            "sample",
+            "victim",
+            "cnn",
+            AttackConfig(grid_size=1, max_queries=4, epsilon=0.1, step_size=0.02),
+            seed=7,
+        )
+        self.assertEqual(result.total_target_calls, 4)
+        self.assertEqual(result.policy_digest_before, result.policy_digest_after)
+        self.assertLessEqual(result.linf, 0.100001)
+        self.assertTrue(all(trace["purpose"] in {"initialization", "score-greedy-proposal"} for trace in result.query_trace))
 
     def test_result_schema_and_statistics(self) -> None:
         row = ResearchResultRow("x", "v", "cnn", "ppo", "T1", 1, 5, True, False, None, 5, 0.1, 1.0, "digest", (0, 1))

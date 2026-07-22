@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 import math
+from typing import Literal
 
 
 @dataclass(frozen=True)
@@ -8,6 +9,10 @@ class AttackConfig:
     step_size: float = 2 / 255
     grid_size: int = 4
     max_queries: int = 20
+    reward_mode: Literal["margin_delta", "legacy"] = "legacy"
+    margin_reward_scale: float = 1.0
+    terminal_success_bonus: float = 10.0
+    query_penalty: float = 0.05
 
     def __post_init__(self) -> None:
         if not 0 < self.epsilon <= 1:
@@ -18,6 +23,14 @@ class AttackConfig:
             raise ValueError("grid_size must be positive")
         if self.max_queries < 1:
             raise ValueError("max_queries must be positive")
+        if self.reward_mode not in {"margin_delta", "legacy"}:
+            raise ValueError("reward_mode must be 'margin_delta' or 'legacy'")
+        if not math.isfinite(self.margin_reward_scale) or self.margin_reward_scale <= 0:
+            raise ValueError("margin_reward_scale must be positive and finite")
+        if not math.isfinite(self.terminal_success_bonus) or self.terminal_success_bonus < 0:
+            raise ValueError("terminal_success_bonus must be non-negative and finite")
+        if not math.isfinite(self.query_penalty) or self.query_penalty < 0:
+            raise ValueError("query_penalty must be non-negative and finite")
 
     @property
     def action_dim(self) -> int:
