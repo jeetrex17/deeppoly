@@ -13,6 +13,9 @@ class AttackConfig:
     margin_reward_scale: float = 1.0
     terminal_success_bonus: float = 10.0
     query_penalty: float = 0.05
+    rollback_on_non_improvement: bool = False
+    action_history_features: bool = False
+    image_patch_features: bool = False
 
     def __post_init__(self) -> None:
         if not 0 < self.epsilon <= 1:
@@ -31,6 +34,12 @@ class AttackConfig:
             raise ValueError("terminal_success_bonus must be non-negative and finite")
         if not math.isfinite(self.query_penalty) or self.query_penalty < 0:
             raise ValueError("query_penalty must be non-negative and finite")
+        if not isinstance(self.rollback_on_non_improvement, bool):
+            raise ValueError("rollback_on_non_improvement must be boolean")
+        if not isinstance(self.action_history_features, bool):
+            raise ValueError("action_history_features must be boolean")
+        if not isinstance(self.image_patch_features, bool):
+            raise ValueError("image_patch_features must be boolean")
 
     @property
     def action_dim(self) -> int:
@@ -39,6 +48,16 @@ class AttackConfig:
     @property
     def state_dim(self) -> int:
         return self.grid_size * self.grid_size + 6
+
+    @property
+    def recurrent_observation_dim(self) -> int:
+        history_dim = 2 * self.action_dim if self.action_history_features else 0
+        image_dim = (
+            2 * self.grid_size * self.grid_size * 3
+            if self.image_patch_features
+            else 0
+        )
+        return 8 + history_dim + image_dim
 
 
 @dataclass(frozen=True)

@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "name": "cifar10-rtx-publication",
+  "research_valid": false,
+  "base_config": "configs/rl_transfer/cifar10_rtx_bc_ppo.json",
+  "output_dir": "output/rl_transfer/cifar10_rtx_publication",
+  "device": "cuda",
+  "seeds": [17, 29, 41, 53, 67, 79, 97, 113, 131, 149],
+  "target_families": [
+    "classical_cnn",
+    "modern_cnn",
+    "transformer"
+  ],
+  "require_source_gate": true,
+  "source_holdout_instances_per_family": 1,
+  "target_instances_per_family": 3,
+  "resume": true,
+  "split_seed": 20260727,
+  "victim_seed": 1000000,
+  "replicate_unit": "policy_seed",
+  "primary_control": "score_greedy",
+  "primary_metric": "asr_at_50",
+  "require_clean_worktree": true,
+  "minimum_seeds": 10,
+  "minimum_source_asr_gain": 0.05,
+  "minimum_source_auc_gain": 0.02,
+  "minimum_target_asr_gain": 0.03,
+  "minimum_target_auc_gain": 0.01,
+  "bootstrap_samples": 10000,
+  "permutation_samples": 10000
+}

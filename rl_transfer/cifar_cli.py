@@ -12,7 +12,7 @@ def main() -> None:
         type=Path,
         default=Path("configs/rl_transfer/cifar10_m4_pilot.json"),
     )
-    parser.add_argument("--device", choices=("auto", "cpu", "mps"))
+    parser.add_argument("--device", choices=("auto", "cpu", "mps", "cuda"))
     parser.add_argument("--output-dir", type=Path)
     parser.add_argument("--no-resume", action="store_true")
     args = parser.parse_args()

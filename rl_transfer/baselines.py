@@ -28,16 +28,34 @@ class RandomActionPolicy:
             raise ValueError("action_dim must be positive")
         self.action_dim = action_dim
         self.seed = seed
-        self.rng = random.Random(seed)
 
     def initial_state(self):
-        return None
+        return {"episode_seed": None, "step": 0}
 
     def persistent_digest(self) -> str:
         return hashlib.sha256(f"random:{self.seed}:{self.action_dim}".encode()).hexdigest()
 
     def act(self, observation: np.ndarray, hidden=None, deterministic: bool = False):
-        return self.rng.randrange(self.action_dim), hidden
+        del deterministic
+        if observation.ndim != 1:
+            raise ValueError("random policy requires a one-dimensional observation")
+        state = (
+            self.initial_state()
+            if hidden is None
+            else {
+                "episode_seed": hidden["episode_seed"],
+                "step": int(hidden["step"]),
+            }
+        )
+        if state["episode_seed"] is None:
+            digest = hashlib.sha256()
+            digest.update(f"{self.seed}:{self.action_dim}".encode())
+            digest.update(observation.tobytes())
+            state["episode_seed"] = int.from_bytes(digest.digest()[:8], "big")
+        payload = f"{state['episode_seed']}:{state['step']}".encode()
+        action = int.from_bytes(hashlib.sha256(payload).digest()[:8], "big")
+        state["step"] = int(state["step"]) + 1
+        return action % self.action_dim, state
 
 
 class BanditActionPolicy:

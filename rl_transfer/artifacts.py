@@ -5,12 +5,14 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import re
 import tempfile
 from typing import Mapping
 
 import torch
 
 from .recurrent import PPOConfig, RecurrentAttackPolicy
+from .paths import resolve_descendant
 
 
 def sha256_file(path: Path) -> str:
@@ -22,7 +24,11 @@ def sha256_file(path: Path) -> str:
 
 
 def _sidecar_path(path: Path) -> Path:
-    return path.with_suffix(path.suffix + ".sha256")
+    return resolve_descendant(
+        path.parent,
+        path.with_suffix(path.suffix + ".sha256"),
+        label="checkpoint checksum",
+    )
 
 
 @contextmanager
@@ -93,17 +99,50 @@ def save_recurrent_checkpoint(
 def load_recurrent_checkpoint(
     path: Path,
     device: str | torch.device = "cpu",
+    *,
+    expected_observation_dim: int | None = None,
+    expected_action_dim: int | None = None,
+    expected_hidden_dim: int | None = None,
+    max_file_bytes: int = 128 * 1024 * 1024,
 ) -> tuple[RecurrentAttackPolicy, dict[str, object]]:
+    if (
+        not path.is_file()
+        or not 0 < path.stat().st_size <= max_file_bytes
+    ):
+        raise ValueError("recurrent checkpoint size is outside the safe limit")
     expected_digest = _sidecar_path(path).read_text().strip()
+    if re.fullmatch(r"[0-9a-f]{64}", expected_digest) is None:
+        raise ValueError("checkpoint SHA-256 sidecar is malformed")
     if sha256_file(path) != expected_digest:
         raise ValueError("checkpoint SHA-256 verification failed")
     payload = torch.load(path, map_location=device, weights_only=True)
     if payload.get("schema_version") != 1:
         raise ValueError("unsupported recurrent checkpoint schema")
-    policy = RecurrentAttackPolicy(
+    dimensions = (
         int(payload["observation_dim"]),
         int(payload["action_dim"]),
-        hidden_dim=int(payload["hidden_dim"]),
+        int(payload["hidden_dim"]),
+    )
+    expected = (
+        expected_observation_dim,
+        expected_action_dim,
+        expected_hidden_dim,
+    )
+    if any(
+        expected_value is not None and actual != expected_value
+        for actual, expected_value in zip(dimensions, expected)
+    ):
+        raise ValueError("recurrent checkpoint dimensions do not match the run")
+    if not (
+        1 <= dimensions[0] <= 10_000
+        and 1 <= dimensions[1] <= 5_000
+        and 1 <= dimensions[2] <= 1_024
+    ):
+        raise ValueError("recurrent checkpoint dimensions exceed safe limits")
+    policy = RecurrentAttackPolicy(
+        dimensions[0],
+        dimensions[1],
+        hidden_dim=dimensions[2],
         config=PPOConfig(**payload["ppo_config"]),
     ).to(device)
     policy.load_state_dict(payload["model"])
@@ -131,8 +170,17 @@ def load_model_checkpoint(
     path: Path,
     model: torch.nn.Module,
     device: str | torch.device,
+    *,
+    max_file_bytes: int = 1024 * 1024 * 1024,
 ) -> dict[str, object]:
+    if (
+        not path.is_file()
+        or not 0 < path.stat().st_size <= max_file_bytes
+    ):
+        raise ValueError("model checkpoint size is outside the safe limit")
     expected_digest = _sidecar_path(path).read_text().strip()
+    if re.fullmatch(r"[0-9a-f]{64}", expected_digest) is None:
+        raise ValueError("model checkpoint SHA-256 sidecar is malformed")
     if sha256_file(path) != expected_digest:
         raise ValueError("model checkpoint SHA-256 verification failed")
     payload = torch.load(path, map_location=device, weights_only=True)

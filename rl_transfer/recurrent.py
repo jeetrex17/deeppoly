@@ -81,12 +81,35 @@ class RecurrentAttackPolicy(nn.Module):
         next_hidden = self.memory(encoded, hidden)
         return self.actor(next_hidden), self.critic(next_hidden).squeeze(-1), next_hidden
 
-    def act(self, observation: np.ndarray, hidden: torch.Tensor, deterministic: bool = False) -> tuple[int, torch.Tensor]:
+    def act(
+        self,
+        observation: np.ndarray,
+        hidden: torch.Tensor,
+        deterministic: bool = False,
+        random_draw: float | None = None,
+    ) -> tuple[int, torch.Tensor]:
         observation_tensor = torch.as_tensor(observation, dtype=torch.float32, device=hidden.device)
         with torch.inference_mode():
             logits, _, next_hidden = self(observation_tensor, hidden)
-            distribution = torch.distributions.Categorical(logits=logits)
-            action = logits.argmax(-1) if deterministic else distribution.sample()
+            if deterministic:
+                action = logits.argmax(-1)
+            elif random_draw is None:
+                action = torch.distributions.Categorical(logits=logits).sample()
+            else:
+                if not 0.0 <= random_draw < 1.0:
+                    raise ValueError("random_draw must be in [0, 1)")
+                probabilities = logits.softmax(-1).detach().cpu().numpy()
+                action_index = int(
+                    np.searchsorted(
+                        np.cumsum(probabilities),
+                        random_draw,
+                        side="right",
+                    )
+                )
+                action = torch.tensor(
+                    min(action_index, self.action_dim - 1),
+                    device=hidden.device,
+                )
         return int(action), next_hidden.detach()
 
     def persistent_digest(self) -> str:
@@ -97,7 +120,8 @@ class RecurrentAttackPolicy(nn.Module):
                 hasher.update(value.detach().cpu().contiguous().numpy().tobytes())
             elif isinstance(value, dict):
                 for key in sorted(value, key=str):
-                    hasher.update(str(key).encode("utf-8")); update(value[key])
+                    hasher.update(str(key).encode("utf-8"))
+                    update(value[key])
             elif isinstance(value, (list, tuple)):
                 for item in value:
                     update(item)
