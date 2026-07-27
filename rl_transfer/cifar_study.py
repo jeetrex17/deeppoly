@@ -19,6 +19,7 @@ from .research_metrics import asr_query_auc
 
 FAMILIES = ("classical_cnn", "modern_cnn", "transformer")
 LEARNED_METHOD = "groupdro_recurrent_ppo_stochastic"
+HYBRID_LEARNED_METHOD = "gradient_bc_groupdro_ppo_stochastic"
 CONTROL_METHODS = ("random_action", "bandit_action", "score_greedy")
 REQUIRED_METHODS = (LEARNED_METHOD, *CONTROL_METHODS)
 
@@ -190,6 +191,7 @@ def summarize_study(
     expected_pairs = {(family, seed) for family in families for seed in seeds}
     observed_pairs: set[tuple[str, int]] = set()
     method_names: set[str] | None = None
+    learned_method_name: str | None = None
     grouped: dict[str, dict[str, dict[str, dict[int, float]]]] = {}
     victim_gates: dict[tuple[str, int], bool] = {}
     for run in runs:
@@ -211,14 +213,32 @@ def summarize_study(
         if not isinstance(evaluation, Mapping) or not evaluation:
             raise ValueError("every run requires non-empty evaluation metrics")
         run_methods = {str(method) for method in evaluation}
-        if not set(REQUIRED_METHODS).issubset(run_methods):
+        run_learned_method = (
+            HYBRID_LEARNED_METHOD
+            if HYBRID_LEARNED_METHOD in run_methods
+            else LEARNED_METHOD
+        )
+        if not {
+            run_learned_method,
+            *CONTROL_METHODS,
+        }.issubset(run_methods):
             raise ValueError("every run must include RL, random, bandit, and score-greedy methods")
+        if learned_method_name is None:
+            learned_method_name = run_learned_method
+        elif learned_method_name != run_learned_method:
+            raise ValueError("learned method naming must align across runs")
         if method_names is None:
             method_names = run_methods
         elif run_methods != method_names:
             raise ValueError("evaluation methods must align exactly across every run")
         family_metrics = grouped.setdefault(family, {})
         alignment: tuple[int, str, int, tuple[int, ...]] | None = None
+        operator_digests: list[str | None] = []
+        run_config = run.get("config")
+        require_operator_match = bool(
+            isinstance(run_config, Mapping)
+            and run_config.get("rollback_on_non_improvement") is True
+        )
         for method, metrics in evaluation.items():
             if not isinstance(metrics, Mapping):
                 raise ValueError("method metrics must be mappings")
@@ -260,6 +280,12 @@ def summarize_study(
             eligible_digest = metrics.get("eligible_sample_ids_sha256")
             digest_before = metrics.get("policy_digest_before")
             digest_after = metrics.get("policy_digest_after")
+            operator_digest = metrics.get("operator_digest")
+            if operator_digest is not None and (
+                not isinstance(operator_digest, str) or not operator_digest
+            ):
+                raise ValueError("operator digests must be non-empty strings")
+            operator_digests.append(operator_digest)
             if any(
                 not isinstance(value, int) or isinstance(value, bool)
                 for value in (eligible, successes, query_budget, max_calls)
@@ -300,6 +326,13 @@ def summarize_study(
                 {"asr": {}, "auc": {}, "entropy": {}},
             )
             bucket["asr"][seed], bucket["auc"][seed], bucket["entropy"][seed] = values
+        if require_operator_match and (
+            any(value is None for value in operator_digests)
+            or len(set(operator_digests)) != 1
+        ):
+            raise ValueError(
+                "all publication methods must share one attack-operator digest"
+            )
 
     grid_complete = observed_pairs == expected_pairs
     missing_pairs = sorted(expected_pairs - observed_pairs)
@@ -324,7 +357,9 @@ def summarize_study(
             }
             for method, values in methods.items()
         }
-        learned = methods[LEARNED_METHOD]
+        if learned_method_name is None:
+            raise ValueError("a learned method is required")
+        learned = methods[learned_method_name]
         comparisons = {
             control_name: {
                 "final_asr_delta": _paired_interval(

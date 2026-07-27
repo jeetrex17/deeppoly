@@ -316,7 +316,6 @@ def render_pipeline_svg(results: Mapping[str, Any]) -> str:
     source_families = [family for family in ("classical_cnn", "modern_cnn") if family in victims]
     target_family = "transformer" if "transformer" in victims else list(victims)[-1]
     source_text = " + ".join(_family_label(family) for family in source_families)
-    target = _as_mapping(victims[target_family], f"victims.{target_family}")
     width, height = 1100, 560
     body = [
         '<defs><marker id="arrow" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto"><path d="M0,0 L10,4 L0,8 z" fill="#63d5ff"/></marker></defs>',

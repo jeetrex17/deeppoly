@@ -146,6 +146,20 @@ class CIFARContractTests(unittest.TestCase):
             self.assertTrue((run_dir / "policy.pt").is_file())
             self.assertTrue((run_dir / "results.jsonl").is_file())
             self.assertIn("groupdro_recurrent_ppo_stochastic", first["evaluation"])
+            binding = first["policy"]["training_binding"]
+            self.assertEqual(
+                binding["dataset_version"],
+                "in-memory-fixture",
+            )
+            self.assertEqual(
+                binding["victim_cache_digest"],
+                first["victim_cache_digest"],
+            )
+            self.assertTrue(binding["source_victim_checkpoints"])
+            self.assertEqual(
+                first["victim_bank_digest"],
+                second["victim_bank_digest"],
+            )
             first_seeds = {
                 instance["victim_id"]: instance["training_seed"]
                 for instances in first["victim_instances"].values()

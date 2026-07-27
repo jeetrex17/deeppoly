@@ -12,7 +12,9 @@ from torch import nn
 from .audit import AuditedVictim
 from .actions import apply_action, patch_catalog
 from .config import AttackConfig
+from .features import patch_image_features
 from .population import FamilyRobustWeights, balanced_family_schedule
+from .operator import choose_attack_transition
 from .recurrent import PPOSequence, RecurrentAttackPolicy
 from .rewards import recurrent_attack_reward, score_margin
 
@@ -48,14 +50,64 @@ def _distribution_summary(values: Sequence[float]) -> dict[str, object]:
     }
 
 
-def calibration_resistant_observation(scores: torch.Tensor, label: int, initial_scores: torch.Tensor, remaining: float, previous_action: int | None, action_dim: int, previous_reward: float, step_fraction: float) -> np.ndarray:
+def calibration_resistant_observation(
+    scores: torch.Tensor,
+    label: int,
+    initial_scores: torch.Tensor,
+    remaining: float,
+    previous_action: int | None,
+    action_dim: int,
+    previous_reward: float,
+    step_fraction: float,
+    action_counts: np.ndarray | None = None,
+    action_values: np.ndarray | None = None,
+    image_features: np.ndarray | None = None,
+) -> np.ndarray:
     rank = int((scores > scores[label]).sum())
     normalized_rank = rank / max(1, scores.numel() - 1)
     entropy = float(-(scores.clamp_min(1e-12) * scores.clamp_min(1e-12).log()).sum() / math.log(scores.numel()))
     delta = float((scores[label] - initial_scores[label]) / initial_scores[label].abs().clamp_min(1e-6))
     rival = float(torch.cat((scores[:label], scores[label + 1:])).max())
     action_feature = -1.0 if previous_action is None else previous_action / max(1, action_dim - 1)
-    return np.asarray((normalized_rank, entropy, delta, float(scores[label]) - rival, remaining, action_feature, math.tanh(previous_reward), step_fraction), dtype=np.float32)
+    base = np.asarray(
+        (
+            normalized_rank,
+            entropy,
+            delta,
+            float(scores[label]) - rival,
+            remaining,
+            action_feature,
+            math.tanh(previous_reward),
+            step_fraction,
+        ),
+        dtype=np.float32,
+    )
+    blocks = [base]
+    if action_counts is not None or action_values is not None:
+        if action_counts is None or action_values is None:
+            raise ValueError("action counts and values must be supplied together")
+        counts = np.asarray(action_counts, dtype=np.float32)
+        values = np.asarray(action_values, dtype=np.float32)
+        if (
+            counts.shape != (action_dim,)
+            or values.shape != (action_dim,)
+            or not np.isfinite(counts).all()
+            or not np.isfinite(values).all()
+            or (counts < 0).any()
+        ):
+            raise ValueError("action history features do not match the action catalog")
+        normalized_counts = counts / max(1.0, float(counts.max()))
+        blocks.extend((normalized_counts, np.tanh(values)))
+    if image_features is not None:
+        numeric_image_features = np.asarray(image_features, dtype=np.float32)
+        if (
+            numeric_image_features.ndim != 1
+            or not numeric_image_features.size
+            or not np.isfinite(numeric_image_features).all()
+        ):
+            raise ValueError("image features must be a finite one-dimensional vector")
+        blocks.append(numeric_image_features)
+    return np.concatenate(blocks).astype(np.float32, copy=False)
 
 
 def _validated_catalog(policy: RecurrentAttackPolicy, config: AttackConfig, channels: int):
@@ -65,7 +117,18 @@ def _validated_catalog(policy: RecurrentAttackPolicy, config: AttackConfig, chan
     return catalog
 
 
-def run_frozen_episode(policy, victim: nn.Module, image: torch.Tensor, label: int, sample_id: str, victim_id: str, family: str, config: AttackConfig, deterministic: bool = True) -> FrozenEpisodeResult:
+def run_frozen_episode(
+    policy,
+    victim: nn.Module,
+    image: torch.Tensor,
+    label: int,
+    sample_id: str,
+    victim_id: str,
+    family: str,
+    config: AttackConfig,
+    deterministic: bool = True,
+    episode_seed: int | None = None,
+) -> FrozenEpisodeResult:
     if config.max_queries < 1:
         raise ValueError("at least one query is required for T1")
     device = (
@@ -83,15 +146,69 @@ def run_frozen_episode(policy, victim: nn.Module, image: torch.Tensor, label: in
     if not clean_correct:
         return FrozenEpisodeResult(sample_id, victim_id, family, False, False, None, oracle.calls, 0.0, 0.0, (), before, policy.persistent_digest(), tuple(oracle.trace_dicts()))
     hidden = policy.initial_state()
+    stochastic_seed = (
+        episode_seed
+        if episode_seed is not None
+        else int.from_bytes(
+            hashlib.sha256(
+                f"frozen-policy-v1:{victim_id}:{sample_id}".encode()
+            ).digest()[:8],
+            "big",
+        )
+    )
+    action_rng = random.Random(stochastic_seed)
     previous_action, previous_reward = None, 0.0
+    action_counts = np.zeros(config.action_dim, dtype=np.float32)
+    action_values = np.zeros(config.action_dim, dtype=np.float32)
     actions: list[int] = []
     catalog = _validated_catalog(policy, config, image.shape[0])
     success, success_query = False, None
     while oracle.calls < config.max_queries and not success:
-        observation = calibration_resistant_observation(initial.scores, label, clean_scores, (config.max_queries - oracle.calls) / config.max_queries, previous_action, config.action_dim, previous_reward, oracle.calls / config.max_queries)
-        action, hidden = policy.act(observation, hidden, deterministic=deterministic)
-        adversarial = apply_action(adversarial, original, catalog[action], config.epsilon, config.step_size, config.grid_size)
-        response = oracle.query(adversarial, sample_id, "attack", len(actions) + 1)
+        observation = calibration_resistant_observation(
+            initial.scores,
+            label,
+            clean_scores,
+            (config.max_queries - oracle.calls) / config.max_queries,
+            previous_action,
+            config.action_dim,
+            previous_reward,
+            oracle.calls / config.max_queries,
+            action_counts if config.action_history_features else None,
+            action_values if config.action_history_features else None,
+            (
+                patch_image_features(
+                    original,
+                    adversarial,
+                    grid_size=config.grid_size,
+                )
+                if config.image_patch_features
+                else None
+            ),
+        )
+        if isinstance(policy, RecurrentAttackPolicy):
+            action, hidden = policy.act(
+                observation,
+                hidden,
+                deterministic=deterministic,
+                random_draw=(
+                    None if deterministic else action_rng.random()
+                ),
+            )
+        else:
+            action, hidden = policy.act(
+                observation,
+                hidden,
+                deterministic=deterministic,
+            )
+        proposal = apply_action(
+            adversarial,
+            original,
+            catalog[action],
+            config.epsilon,
+            config.step_size,
+            config.grid_size,
+        )
+        response = oracle.query(proposal, sample_id, "attack", len(actions) + 1)
         actions.append(action)
         success = response.predicted_label != label
         previous_reward = recurrent_attack_reward(
@@ -101,8 +218,24 @@ def run_frozen_episode(policy, victim: nn.Module, image: torch.Tensor, label: in
             success,
             config,
         )
+        current_margin = score_margin(initial.scores, label)
+        proposal_margin = score_margin(response.scores, label)
+        transition = choose_attack_transition(
+            adversarial,
+            proposal,
+            current_margin=current_margin,
+            proposal_margin=proposal_margin,
+            success=success,
+            rollback_on_non_improvement=config.rollback_on_non_improvement,
+        )
+        adversarial = transition.image
+        action_counts[action] += 1.0
+        action_values[action] += (
+            previous_reward - action_values[action]
+        ) / action_counts[action]
         previous_action = action
-        initial = response
+        if transition.accepted:
+            initial = response
         if success:
             success_query = oracle.calls
     delta = adversarial - original
@@ -139,8 +272,9 @@ def run_score_greedy_episode(
         else image.device
     )
     digest_payload = (
-        f"score-greedy-v1:{seed}:{config.grid_size}:{config.max_queries}:"
-        f"{config.epsilon:.12g}"
+        f"score-greedy-v2:{seed}:{config.grid_size}:{config.max_queries}:"
+        f"{config.epsilon:.12g}:{config.step_size:.12g}:"
+        f"{config.rollback_on_non_improvement}"
     )
     digest = hashlib.sha256(digest_payload.encode()).hexdigest()
     oracle = AuditedVictim(victim, config.max_queries, "scores", victim_id)
@@ -180,7 +314,11 @@ def run_score_greedy_episode(
             original,
             action,
             config.epsilon,
-            config.epsilon,
+            (
+                config.step_size
+                if config.rollback_on_non_improvement
+                else config.epsilon
+            ),
             config.grid_size,
         )
         candidate = oracle.query(
@@ -192,8 +330,16 @@ def run_score_greedy_episode(
         actions.append(action_index)
         success = candidate.predicted_label != label
         candidate_margin = score_margin(candidate.scores, label)
-        if success or candidate_margin < accepted_margin:
-            accepted = proposal
+        transition = choose_attack_transition(
+            accepted,
+            proposal,
+            current_margin=accepted_margin,
+            proposal_margin=candidate_margin,
+            success=success,
+            rollback_on_non_improvement=True,
+        )
+        if transition.accepted:
+            accepted = transition.image
             accepted_margin = candidate_margin
         if success:
             success_query = oracle.calls
@@ -328,9 +474,31 @@ def train_population_policy(
         catalog = _validated_catalog(policy, config, image.shape[0])
         observations, actions, old_logs, rewards, values = [], [], [], [], []
         previous_action, previous_reward = None, 0.0
+        action_counts = np.zeros(config.action_dim, dtype=np.float32)
+        action_values = np.zeros(config.action_dim, dtype=np.float32)
         success = False
         while oracle.calls < config.max_queries:
-            observation = calibration_resistant_observation(initial.scores, label, clean_scores, (config.max_queries - oracle.calls) / config.max_queries, previous_action, config.action_dim, previous_reward, oracle.calls / config.max_queries)
+            observation = calibration_resistant_observation(
+                initial.scores,
+                label,
+                clean_scores,
+                (config.max_queries - oracle.calls) / config.max_queries,
+                previous_action,
+                config.action_dim,
+                previous_reward,
+                oracle.calls / config.max_queries,
+                action_counts if config.action_history_features else None,
+                action_values if config.action_history_features else None,
+                (
+                    patch_image_features(
+                        original,
+                        adversarial,
+                        grid_size=config.grid_size,
+                    )
+                    if config.image_patch_features
+                    else None
+                ),
+            )
             observation_tensor = torch.as_tensor(observation, device=device)
             with torch.no_grad():
                 logits, value, next_hidden = policy(observation_tensor, hidden)
@@ -341,8 +509,16 @@ def train_population_policy(
                     generator=generator,
                 ).squeeze(0)
                 action = sampled_action.to(device)
-            adversarial = apply_action(adversarial, original, catalog[int(action)], config.epsilon, config.step_size, config.grid_size)
-            response = oracle.query(adversarial, sample_id, "attack", oracle.calls)
+            action_index = int(action)
+            proposal = apply_action(
+                adversarial,
+                original,
+                catalog[action_index],
+                config.epsilon,
+                config.step_size,
+                config.grid_size,
+            )
+            response = oracle.query(proposal, sample_id, "attack", oracle.calls)
             success = response.predicted_label != label
             reward = recurrent_attack_reward(
                 initial.scores,
@@ -351,9 +527,28 @@ def train_population_policy(
                 success,
                 config,
             )
-            observations.append(observation_tensor); actions.append(action); old_logs.append(distribution.log_prob(action)); values.append(value)
+            transition = choose_attack_transition(
+                adversarial,
+                proposal,
+                current_margin=score_margin(initial.scores, label),
+                proposal_margin=score_margin(response.scores, label),
+                success=success,
+                rollback_on_non_improvement=config.rollback_on_non_improvement,
+            )
+            adversarial = transition.image
+            action_counts[action_index] += 1.0
+            action_values[action_index] += (
+                reward - action_values[action_index]
+            ) / action_counts[action_index]
+            observations.append(observation_tensor)
+            actions.append(action)
+            old_logs.append(distribution.log_prob(action))
+            values.append(value)
             rewards.append(reward)
-            hidden, initial, previous_action, previous_reward = next_hidden.detach(), response, int(action), reward
+            hidden = next_hidden.detach()
+            if transition.accepted:
+                initial = response
+            previous_action, previous_reward = action_index, reward
             if success:
                 break
         source_calls += oracle.calls
@@ -367,7 +562,8 @@ def train_population_policy(
             instance_successes[victim_id] += 1
         if not rewards:
             continue
-        returns = []; running = 0.0
+        returns = []
+        running = 0.0
         for reward in reversed(rewards):
             running = reward + 0.98 * running
             returns.append(running)
