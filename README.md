@@ -7,7 +7,7 @@ Research code for two related robustness directions:
 
 The transferability work asks a specific question: can an RL attack policy learn reusable attack behavior from multiple source architectures, then transfer to an unseen target architecture under a fixed query budget?
 
-> Current status: RTX Phase 1 completed all **30 family/seed cells**, and Phase 2 Stage B completed all **3 development cells and 12 source conditions**. Both source gates failed. Phase 2 required about **29 recorded compute minutes**, stopped before the longer replication stage, and made **zero hidden-target attack calls**.
+> Current status: RTX Phase 1 completed all **30 family/seed cells**, Phase 2 Stage B completed all **3 development cells and 12 source conditions**, and the post-Stage-B D0 diagnostic completed all **3 folds and 60 temperature-condition blocks**. The source gates failed, no tested temperature repaired the learned policy, and the complete RTX workflow made **zero hidden-target attack calls**.
 
 ## RTX Phase 1 and Phase 2 results
 
@@ -48,10 +48,33 @@ The complete Git-safe evidence bundle includes every raw numerical result row, s
 - [RTX Phase 2 Stage B evidence and interpretation](docs/research/cifar10_rtx_phase2_stage_b/README.md)
 - [Deadline-aware source-only next steps](docs/research/cifar10_rtx_phase2_next_steps.md)
 
+### Post-Stage-B calibration diagnostic
+
+The bounded D0 diagnostic replayed the three completed, frozen Phase 2 checkpoints at five sampling temperatures. It completed 9,000 source result rows and 376,142 source-model calls in 12 minutes 21 seconds on an RTX 2080 Ti. All temperature-1.0 rows reproduced the verified Phase 2 evidence exactly.
+
+| Frozen method | Macro source ASR | Macro ASR/query AUC | Gain over score, ASR / AUC |
+| --- | ---: | ---: | ---: |
+| Score greedy | 6.435% | 2.995% | reference |
+| Temperature 0.25 | 5.432% | 2.628% | -1.003 / -0.366 points |
+| Temperature 0.50 | 6.106% | 2.752% | -0.329 / -0.242 points |
+| Temperature 0.75 | 6.236% | 2.874% | -0.200 / -0.120 points |
+| Temperature 1.00 | 6.007% | 2.683% | -0.429 / -0.312 points |
+| Temperature 1.50 | 6.321% | 2.810% | -0.114 / -0.185 points |
+
+![Frozen policy gain by temperature](docs/research/cifar10_rtx_phase2_calibration/mean_gain_by_temperature.svg)
+
+No temperature matched score-greedy ASR and AUC in every fold. Temperature 0.75 improved both metrics only in the transformer-held-out fold, while all five temperatures remained below score greedy on both metrics in the modern-CNN-held-out fold. The predeclared rule therefore closes this five-value global-temperature repair for the frozen seed-17 checkpoints. It does not establish the underlying cause; a baseline-preserving residual ranker is the next exploratory screen.
+
+- [RTX Phase 2 calibration evidence, figures, and interpretation](docs/research/cifar10_rtx_phase2_calibration/README.md)
+
 Stage C and target evaluation were not run because the locked Stage B gate failed. The full 90 MB archive, including policy and victim checkpoints, is retained locally under `output/rl_transfer/cifar10_rtx_phase2_screen`. Recreate the compact evidence bundle with:
 
 ```bash
 uv run python scripts/export_phase2_evidence.py
+
+uv run python scripts/export_phase2_calibration_evidence.py \
+  --attempt-log output/rl_transfer/cifar10_rtx_phase2_calibration.log \
+  --attempt-log output/rl_transfer/cifar10_rtx_phase2_calibration.rerun.log
 ```
 
 The following commands reproduce or resume the locked Phase 2 screen. Neither command has a target-evaluation mode.
@@ -70,6 +93,13 @@ uv run python -m rl_transfer.phase2_screen_cli \
 
 uv run python -m rl_transfer.phase2_screen_cli \
   --config configs/rl_transfer/cifar10_rtx_phase2_screen.json
+
+uv run python -m rl_transfer.phase2_calibration_cli \
+  --source-manifest output/rl_transfer/cifar10_rtx_phase2_screen/screen_manifest.json \
+  --source-root output/rl_transfer/cifar10_rtx_phase2_screen \
+  --output-dir output/rl_transfer/cifar10_rtx_phase2_calibration \
+  --data-root data/cifar10 \
+  --deadline-seconds 900
 ```
 
 A positive screen authorizes only a larger source-only replication. It does not authorize a target claim. Target evaluation remains sealed until the final source gate passes.

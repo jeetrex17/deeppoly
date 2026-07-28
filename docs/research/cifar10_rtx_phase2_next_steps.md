@@ -2,6 +2,7 @@
 
 **Decision date:** 28 July 2026
 **Current result:** Phase 2 Stage B failed the locked source-only promotion gate
+**D0 result:** complete; no temperature matched score-greedy ASR and AUC in every fold
 **Hidden-target attack calls:** 0
 
 ## What the completed screen tells us
@@ -19,7 +20,7 @@ The soft behavior-cloning objective also failed in all three folds:
 The evidence supports three conclusions.
 
 1. The attack operator can find adversarial examples, so the main problem is not zero attack opportunity.
-2. The policy distribution remains poorly calibrated. Stochastic deployment behaves close to random, while deterministic deployment collapses to a weak action choice.
+2. The learned policy does not yield a strong deployment rule. Stochastic sampling performs near random, while deterministic argmax is weak. These observations do not distinguish calibration, representation, or action-ranking failure.
 3. More episodes with the same objective are unlikely to solve the problem. PPO block returns and successes do not show a reliable late-training improvement, and the supervised representation gate already fails.
 
 The present Phase 2 result must remain negative. Post hoc tuning cannot relabel it as a pass.
@@ -28,17 +29,28 @@ The present Phase 2 result must remain negative. Post hoc tuning cannot relabel 
 
 The next method should be recorded as a new exploratory source-only phase. It must not modify the Phase 2 protocol, artifacts, thresholds, or seed outcome.
 
-### Step 1: frozen-policy calibration diagnostic
+### Step 1: frozen-policy calibration diagnostic, completed
 
-Run a source-only temperature sweep on the three completed Phase 2 checkpoints. Evaluate only the learned policy at temperatures 0.25, 0.50, 0.75, 1.00, and 1.50 against the already matched score-greedy rows.
+The source-only temperature sweep completed on the three frozen Phase 2 checkpoints. It evaluated temperatures 0.25, 0.50, 0.75, 1.00, and 1.50 against the already matched score-greedy rows.
 
-- Expected GPU time: 10 to 15 minutes
+- Recorded GPU time: 12 minutes 21 seconds
 - Training required: none
-- Purpose: determine whether the gap is mainly calibration or representation
+- Purpose: test whether a simple global sampling-temperature change repairs the frozen checkpoints
 - Scientific status: exploratory diagnosis only
 - Stop condition: if no temperature reaches score-greedy ASR and AUC in every fold, do not spend time on temperature-only fixes
 
-This diagnostic cannot rescue Stage B. It can only select the design direction for a new method.
+| Method | Macro ASR | Macro AUC | ASR gap | AUC gap |
+|---|---:|---:|---:|---:|
+| Score greedy | 6.435% | 2.995% | reference | reference |
+| Temperature 0.25 | 5.432% | 2.628% | -1.003 points | -0.366 points |
+| Temperature 0.50 | 6.106% | 2.752% | -0.329 points | -0.242 points |
+| Temperature 0.75 | 6.236% | 2.874% | -0.200 points | -0.120 points |
+| Temperature 1.00 | 6.007% | 2.683% | -0.429 points | -0.312 points |
+| Temperature 1.50 | 6.321% | 2.810% | -0.114 points | -0.185 points |
+
+No temperature qualified. Temperature 0.75 improved both metrics only in the transformer-held-out fold. All temperatures remained below score greedy on both metrics in the modern-CNN-held-out fold. The stop condition fired, so this D0 global-temperature protocol is closed. This diagnostic does not identify the underlying cause; residual ranking is only the next exploratory candidate.
+
+The exact archive, 9,000 result rows, 60 query traces, tables, figures, and checksums are in the [D0 evidence bundle](cifar10_rtx_phase2_calibration/README.md).
 
 ### Step 2: build a baseline-preserving residual ranker
 
@@ -53,7 +65,7 @@ The candidate should:
 5. keep the target family absent from construction, validation, training, and selection;
 6. compare score greedy, residual BC only, and residual BC plus PPO on identical samples and query budgets.
 
-This directly addresses the observed failure. The current soft 96-way classifier does not beat a constant validation oracle, while score greedy is already a strong source policy.
+This candidate is motivated by the observed failure. The current soft 96-way classifier does not beat a constant validation oracle, while score greedy is already a strong source policy. D0 did not establish that ranking is the cause.
 
 ### Step 3: use a compute funnel
 
@@ -61,7 +73,7 @@ Do not launch another long grid immediately.
 
 | Rung | Scope | Approximate GPU time | Advance only if |
 |---|---|---:|---|
-| D0 | Frozen temperature diagnostic, all folds | 10 to 15 min | A calibration effect is consistent enough to guide design |
+| D0, complete | Frozen temperature diagnostic, all folds | 12 min 21 s | Failed: stop temperature-only work |
 | D1 | One development fold, 200 BC and 200 PPO episodes, 50 images | 8 to 12 min | BC gains are positive and learned ASR/AUC are not below score greedy |
 | D2 | All three folds, 600 BC and 600 PPO episodes, 100 images | 30 to 40 min | Mean ASR gain is at least +0.010, mean AUC gain is at least +0.005, and at least 9 of 12 conditions improve both |
 | D3 | Fresh seeds 151 and 157, all folds | 60 to 75 min | Gains are positive in every fold and both BC diagnostics pass |
@@ -95,10 +107,11 @@ Pursue the residual-ranking candidate only through the compute funnel above. If 
 
 ## Immediate order of work
 
-1. Commit and publish the complete Phase 2 evidence bundle.
-2. Update the research report with the locked negative Stage B result.
-3. Implement the frozen temperature diagnostic with tests and a 15-minute limit.
-4. Decide between calibration repair and residual ranking from that diagnostic.
-5. Run D1 before authorizing any larger training job.
+1. Completed: commit and publish the Phase 2 Stage B evidence bundle.
+2. Completed: update the research report with the locked negative Stage B result.
+3. Completed: implement and run the frozen temperature diagnostic with a 15-minute limit.
+4. Completed: select residual ranking because no global temperature qualified.
+5. Current: implement and run the one-fold D1 residual-ranker screen.
+6. Stop for explicit approval before any D2 or longer replication job.
 
 This sequence protects the deadline, the sealed target boundary, and the credibility of the final report.

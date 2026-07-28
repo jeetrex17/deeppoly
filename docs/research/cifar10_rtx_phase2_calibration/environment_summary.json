@@ -1,0 +1,13 @@
+{
+  "cuda_runtime_version": "13.0",
+  "cudnn_benchmark": false,
+  "cudnn_deterministic": true,
+  "cudnn_version": 92000,
+  "deterministic_algorithms": true,
+  "environment_sha256": "f3d65d69ca4c0ae4f173514fa68e958bfb48638d3948d4dd97bd20680c5ef89a",
+  "gpu_name": "NVIDIA GeForce RTX 2080 Ti",
+  "gpu_total_memory_bytes": 11336482816,
+  "python_version": "3.12.3",
+  "torch_version": "2.13.0+cu130",
+  "torchvision_version": "0.28.0+cu130"
+}

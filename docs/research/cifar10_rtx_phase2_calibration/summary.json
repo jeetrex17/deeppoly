@@ -1,0 +1,141 @@
+{
+  "decision": {
+    "best_mean_asr_gain": -0.0011425573925573941,
+    "best_mean_asr_temperature": 1.5,
+    "best_mean_auc_gain": -0.0012039175164175187,
+    "best_mean_auc_temperature": 0.75,
+    "qualifying_temperatures": [],
+    "reason": "no frozen temperature matched both controls in every fold",
+    "scope": "five_value_global_sampling_temperature_grid_on_frozen_seed_17_checkpoints",
+    "selected_temperature": null,
+    "stop_tested_global_temperature_protocol": true,
+    "tested_global_temperature_qualified": false
+  },
+  "folds": [
+    {
+      "heldout_family": "classical_cnn",
+      "raw_evidence_audited": true,
+      "temperature_one_reproduced": true
+    },
+    {
+      "heldout_family": "modern_cnn",
+      "raw_evidence_audited": true,
+      "temperature_one_reproduced": true
+    },
+    {
+      "heldout_family": "transformer",
+      "raw_evidence_audited": true,
+      "temperature_one_reproduced": true
+    }
+  ],
+  "integrity": {
+    "calibration_code_digest": "d4134959fa11aadf2495d5ee51ca5eee9b18fbb7978a2eac284d38392dc9ffe1",
+    "calibration_git_revision": "59f4d0691d621206a9120e9f2a0b8d46e41945d7",
+    "completed_folds": 3,
+    "manifest_sha256": "b4479b0319a013fc0ef293d4a449ee5a46f3e70a6ddeee0651ce87fb19a6205e",
+    "query_traces": 60,
+    "query_traces_sha256": "3b9ba3b9b2604e1355a51a83bd4aaf0e530408e590069124f39878c65f76d654",
+    "result_rows": 9000,
+    "results_sha256": "f1a24c5fdbfd7ad63c67439182bb709db613e8ac7efcc02f3a90a851e351eb4a",
+    "source_manifest_sha256": "efd96c5775187ac29fbd1453e3d1654d26373fc17b7c0d22b0e4955215a0e054",
+    "temperature_one_reproduced_folds": 3
+  },
+  "limitations": [
+    "Only one development policy seed was evaluated.",
+    "Each image-victim-temperature combination had one stochastic replay.",
+    "The same 100 source images and overlapping source victims were reused, so the 9,000 rows are dependent observations.",
+    "Five temperatures were selected and evaluated on the same visible source cohort.",
+    "Successes were rare, observed effects were small, and no confidence intervals were estimated; results are descriptive point estimates.",
+    "Only visible source victims were evaluated, so this is not a transfer result.",
+    "No hidden target evaluation was authorized or performed."
+  ],
+  "name": "cifar10-rtx-phase2-calibration-evidence",
+  "runtime": {
+    "deadline_reached": false,
+    "deadline_seconds": 900.0,
+    "elapsed_minutes": 12.343408900483336,
+    "elapsed_seconds": 740.6045340290002,
+    "gpu_name": "NVIDIA GeForce RTX 2080 Ti",
+    "source_model_calls": 376142
+  },
+  "schema_version": 1,
+  "scientific_status": "exploratory_source_only_diagnostic",
+  "score_greedy": {
+    "macro_asr": 0.06435270435270436,
+    "macro_auc": 0.029945386045386047
+  },
+  "status": "complete",
+  "target_evaluation": {
+    "target_calls": 0,
+    "target_evaluation_authorized": false,
+    "target_evaluation_performed": false,
+    "training_performed": false
+  },
+  "temperature_summary": [
+    {
+      "conditions_observed_nonnegative_both": 0,
+      "folds_observed_nonnegative_both": 0,
+      "macro_asr": 0.054322674322674326,
+      "macro_auc": 0.026282369457369458,
+      "mean_asr_gain": -0.010030030030030031,
+      "mean_auc_gain": -0.0036630165880165897,
+      "minimum_fold_asr_gain": -0.01972222222222223,
+      "minimum_fold_auc_gain": -0.006602777777777773,
+      "qualifies": false,
+      "temperature": 0.25,
+      "temperature_label": "T=0.25"
+    },
+    {
+      "conditions_observed_nonnegative_both": 4,
+      "folds_observed_nonnegative_both": 0,
+      "macro_asr": 0.061059246059246064,
+      "macro_auc": 0.027524475024475026,
+      "mean_asr_gain": -0.0032934582934582984,
+      "mean_auc_gain": -0.0024209110209110207,
+      "minimum_fold_asr_gain": -0.004917912417912423,
+      "minimum_fold_auc_gain": -0.005896404646404646,
+      "qualifies": false,
+      "temperature": 0.5,
+      "temperature_label": "T=0.5"
+    },
+    {
+      "conditions_observed_nonnegative_both": 4,
+      "folds_observed_nonnegative_both": 1,
+      "macro_asr": 0.06235646360646361,
+      "macro_auc": 0.028741468528968528,
+      "mean_asr_gain": -0.0019962407462407483,
+      "mean_auc_gain": -0.0012039175164175187,
+      "minimum_fold_asr_gain": -0.006761005511005516,
+      "minimum_fold_auc_gain": -0.004972484159984164,
+      "qualifies": false,
+      "temperature": 0.75,
+      "temperature_label": "T=0.75"
+    },
+    {
+      "conditions_observed_nonnegative_both": 1,
+      "folds_observed_nonnegative_both": 0,
+      "macro_asr": 0.06006575256575256,
+      "macro_auc": 0.02682784212784213,
+      "mean_asr_gain": -0.004286951786951793,
+      "mean_auc_gain": -0.003117543917543915,
+      "minimum_fold_asr_gain": -0.00822072072072072,
+      "minimum_fold_auc_gain": -0.005341287991287989,
+      "qualifies": false,
+      "temperature": 1.0,
+      "temperature_label": "T=1"
+    },
+    {
+      "conditions_observed_nonnegative_both": 4,
+      "folds_observed_nonnegative_both": 0,
+      "macro_asr": 0.06321014696014697,
+      "macro_auc": 0.028099144611644613,
+      "mean_asr_gain": -0.0011425573925573941,
+      "mean_auc_gain": -0.0018462414337414325,
+      "minimum_fold_asr_gain": -0.005548543048543048,
+      "minimum_fold_auc_gain": -0.0031804169554169523,
+      "qualifies": false,
+      "temperature": 1.5,
+      "temperature_label": "T=1.5"
+    }
+  ]
+}
