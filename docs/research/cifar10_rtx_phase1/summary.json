@@ -1,0 +1,336 @@
+{
+  "behavior_cloning": {
+    "accepted_steps": 32378.4,
+    "gate_pass_count": 0,
+    "run_count": 30,
+    "train_accuracy": 0.029896312095382283,
+    "uniform_accuracy": 0.010416666666666666,
+    "validation_accuracy": 0.028366348706185818,
+    "validation_frequency_nll": 4.3580460477791965,
+    "validation_majority_accuracy": 0.02948797160601099,
+    "validation_nll": 4.4172701676686605
+  },
+  "environment": {
+    "cuda_runtime": "13.0",
+    "cudnn_version": 92000
+  },
+  "environment_evidence": {
+    "code_mapping": {
+      "basis": "editable install pin in the verified dependency freeze",
+      "editable_install_commit": "47bd57e9c6826a9e09203de2adacef64a75ace4e",
+      "editable_install_package": "rl_transfer_research",
+      "editable_install_repository": "https://github.com/jeetrex17/deeppoly",
+      "limitation": "The study run-start environment record did not provide a git revision; the commit mapping comes from the editable dependency pin.",
+      "study_git_revision": null
+    },
+    "dependencies": {
+      "freeze_file": "dependency_freeze.txt",
+      "package_count": 141,
+      "pip_freeze_sha256": "252009b099f31efda62d1aeaf733d647a2a865c6d3f0c17e05aad4c7fcc7f61a",
+      "requirements_file": "requirements/rtx-publication.txt",
+      "requirements_sha256": "e3e3730f92fa37cd3a7edc0b8f43af97d5444ebec8e04937a47f5e9df15db908",
+      "sanitized_freeze_sha256": "252009b099f31efda62d1aeaf733d647a2a865c6d3f0c17e05aad4c7fcc7f61a",
+      "torch": "2.13.0",
+      "torchvision": "0.28.0"
+    },
+    "post_run_workstation_audit": {
+      "gpu_model": "NVIDIA GeForce RTX 2080 Ti",
+      "recorded_at_run_start": false,
+      "same_workstation_reported": true,
+      "source": "operator-reported NVIDIA-SMI audit on the study workstation",
+      "timing": "after study completion"
+    },
+    "run_start_manifest": {
+      "cuda_runtime": "13.0",
+      "cudnn_version": 92000,
+      "git_revision": null,
+      "gpu_model": null,
+      "nvidia_driver": "580.126.09"
+    },
+    "schema_version": 1
+  },
+  "integrity": {
+    "all_source_audits_passed": true,
+    "study_code_digest": "5d976361382cbb07c69b03b6dd88312c1238373da41f92c99c3f389e66a5b0b0",
+    "study_manifest_sha256": "791140871a987ec400cca083aea9b1192d8e73f2a5e70e5504dcfcae7f85911d",
+    "verified_results_files": 30,
+    "verified_runs": 30,
+    "verified_trace_files": 30
+  },
+  "interpretation": {
+    "primary_failure": "strict source competence and behavior-cloning gates failed",
+    "source_phase_result": "negative",
+    "target_transfer_claim_supported": false
+  },
+  "outcomes": {
+    "combined_source": {
+      "bandit_action": {
+        "asr": 0.02552856364430324,
+        "asr_query_auc": 0.019213187887329466,
+        "conditions": 120,
+        "eligible": 30900,
+        "eligible_weighted_action_entropy": 0.9932042182619498,
+        "eligible_weighted_asr_query_auc": 0.018076051779935275,
+        "normalized_action_entropy": 0.9921842347141047,
+        "pooled_asr": 0.024174757281553397,
+        "successes": 747
+      },
+      "gradient_bc_groupdro_ppo_stochastic": {
+        "asr": 0.07054370129679363,
+        "asr_query_auc": 0.032482132245764794,
+        "conditions": 120,
+        "eligible": 30900,
+        "eligible_weighted_action_entropy": 0.9230607174076247,
+        "eligible_weighted_asr_query_auc": 0.03064304207119741,
+        "normalized_action_entropy": 0.9231773953269499,
+        "pooled_asr": 0.06754045307443365,
+        "successes": 2087
+      },
+      "gradient_bc_only_stochastic": {
+        "asr": 0.06856869679099795,
+        "asr_query_auc": 0.03101555367996341,
+        "conditions": 120,
+        "eligible": 30900,
+        "eligible_weighted_action_entropy": 0.964620263595973,
+        "eligible_weighted_asr_query_auc": 0.02930485436893204,
+        "normalized_action_entropy": 0.9645723997016166,
+        "pooled_asr": 0.06472491909385113,
+        "successes": 2000
+      },
+      "ppo_only_stochastic": {
+        "asr": 0.05687660564961926,
+        "asr_query_auc": 0.025518028242201736,
+        "conditions": 120,
+        "eligible": 30900,
+        "eligible_weighted_action_entropy": 0.9972464638807758,
+        "eligible_weighted_asr_query_auc": 0.02425987055016181,
+        "normalized_action_entropy": 0.9971230252632234,
+        "pooled_asr": 0.05414239482200647,
+        "successes": 1673
+      },
+      "random_action": {
+        "asr": 0.05596974955247754,
+        "asr_query_auc": 0.02464965048846487,
+        "conditions": 120,
+        "eligible": 30900,
+        "eligible_weighted_action_entropy": 0.9991779353900644,
+        "eligible_weighted_asr_query_auc": 0.023408090614886735,
+        "normalized_action_entropy": 0.999057094190218,
+        "pooled_asr": 0.05336569579288026,
+        "successes": 1649
+      },
+      "score_greedy": {
+        "asr": 0.056061954590941133,
+        "asr_query_auc": 0.024722196180110463,
+        "conditions": 120,
+        "eligible": 30900,
+        "eligible_weighted_action_entropy": 0.9995695487929203,
+        "eligible_weighted_asr_query_auc": 0.023576375404530742,
+        "normalized_action_entropy": 0.9995124735702509,
+        "pooled_asr": 0.05349514563106796,
+        "successes": 1653
+      }
+    },
+    "exact_source": {
+      "bandit_action": {
+        "asr": 0.02544862146451566,
+        "asr_query_auc": 0.018778817653712088,
+        "conditions": 60,
+        "eligible": 20680,
+        "eligible_weighted_action_entropy": 0.9949708243871852,
+        "eligible_weighted_asr_query_auc": 0.017896034816247585,
+        "normalized_action_entropy": 0.994908670632246,
+        "pooled_asr": 0.02422630560928433,
+        "successes": 501
+      },
+      "gradient_bc_groupdro_ppo_stochastic": {
+        "asr": 0.07081418266283308,
+        "asr_query_auc": 0.03155967197223911,
+        "conditions": 60,
+        "eligible": 20680,
+        "eligible_weighted_action_entropy": 0.9230939524521531,
+        "eligible_weighted_asr_query_auc": 0.03007978723404255,
+        "normalized_action_entropy": 0.9232175532651367,
+        "pooled_asr": 0.06764990328820115,
+        "successes": 1399
+      },
+      "gradient_bc_only_stochastic": {
+        "asr": 0.06661429751993735,
+        "asr_query_auc": 0.03030355220305435,
+        "conditions": 60,
+        "eligible": 20680,
+        "eligible_weighted_action_entropy": 0.9649033406231703,
+        "eligible_weighted_asr_query_auc": 0.028884912959381046,
+        "normalized_action_entropy": 0.964995094237788,
+        "pooled_asr": 0.06353965183752418,
+        "successes": 1314
+      },
+      "ppo_only_stochastic": {
+        "asr": 0.056680151115915595,
+        "asr_query_auc": 0.02541988451105656,
+        "conditions": 60,
+        "eligible": 20680,
+        "eligible_weighted_action_entropy": 0.9974636536873435,
+        "eligible_weighted_asr_query_auc": 0.024245647969052223,
+        "normalized_action_entropy": 0.9974609598844978,
+        "pooled_asr": 0.054061895551257254,
+        "successes": 1118
+      },
+      "random_action": {
+        "asr": 0.05619315011247989,
+        "asr_query_auc": 0.02447410616650026,
+        "conditions": 60,
+        "eligible": 20680,
+        "eligible_weighted_action_entropy": 0.9993973811387711,
+        "eligible_weighted_asr_query_auc": 0.02331818181818182,
+        "normalized_action_entropy": 0.9993953600844107,
+        "pooled_asr": 0.05357833655705996,
+        "successes": 1108
+      },
+      "score_greedy": {
+        "asr": 0.056102581282045504,
+        "asr_query_auc": 0.024757214696454442,
+        "conditions": 60,
+        "eligible": 20680,
+        "eligible_weighted_action_entropy": 0.9996701880598421,
+        "eligible_weighted_asr_query_auc": 0.023627659574468086,
+        "normalized_action_entropy": 0.999667683911116,
+        "pooled_asr": 0.05357833655705996,
+        "successes": 1108
+      }
+    },
+    "hybrid_vs_score_greedy_cell_counts": {
+      "losses": 0,
+      "ties": 11,
+      "wins": 109
+    },
+    "hybrid_vs_score_greedy_run_mean_asr_gain": 0.014711601380787585,
+    "hybrid_vs_score_greedy_run_mean_auc_gain": 0.00680245727578467,
+    "lofo_split_combined_source": [
+      {
+        "asr_gain": 0.017489286803679366,
+        "auc_gain": 0.009736737485681508,
+        "control_asr": 0.06570890220705944,
+        "control_auc": 0.028448442522808464,
+        "learned_asr": 0.0831981890107388,
+        "learned_auc": 0.03818518000848997,
+        "omitted_target_family": "classical_cnn"
+      },
+      {
+        "asr_gain": 0.015950145416478934,
+        "auc_gain": 0.008581462349170718,
+        "control_asr": 0.06588058675232142,
+        "control_auc": 0.029832801514998425,
+        "learned_asr": 0.08183073216880035,
+        "learned_auc": 0.03841426386416914,
+        "omitted_target_family": "modern_cnn"
+      },
+      {
+        "asr_gain": 0.010005807897399181,
+        "auc_gain": 0.004961608362110764,
+        "control_asr": 0.03659637481344256,
+        "control_auc": 0.0158853445025245,
+        "learned_asr": 0.04660218271084174,
+        "learned_auc": 0.020846952864635265,
+        "omitted_target_family": "transformer"
+      }
+    ],
+    "seen_family_new_instance": {
+      "bandit_action": {
+        "asr": 0.02560850582409082,
+        "asr_query_auc": 0.01964755812094685,
+        "conditions": 60,
+        "eligible": 10220,
+        "eligible_weighted_action_entropy": 0.9896295201533525,
+        "eligible_weighted_asr_query_auc": 0.018440313111545988,
+        "normalized_action_entropy": 0.9894597987959634,
+        "pooled_asr": 0.02407045009784736,
+        "successes": 246
+      },
+      "gradient_bc_groupdro_ppo_stochastic": {
+        "asr": 0.07027321993075417,
+        "asr_query_auc": 0.033404592519290476,
+        "conditions": 60,
+        "eligible": 10220,
+        "eligible_weighted_action_entropy": 0.9229934668478549,
+        "eligible_weighted_asr_query_auc": 0.03178277886497065,
+        "normalized_action_entropy": 0.9231372373887631,
+        "pooled_asr": 0.06731898238747554,
+        "successes": 688
+      },
+      "gradient_bc_only_stochastic": {
+        "asr": 0.07052309606205856,
+        "asr_query_auc": 0.03172755515687247,
+        "conditions": 60,
+        "eligible": 10220,
+        "eligible_weighted_action_entropy": 0.9640474619401568,
+        "eligible_weighted_asr_query_auc": 0.030154598825831703,
+        "normalized_action_entropy": 0.9641497051654451,
+        "pooled_asr": 0.06712328767123288,
+        "successes": 686
+      },
+      "ppo_only_stochastic": {
+        "asr": 0.05707306018332293,
+        "asr_query_auc": 0.02561617197334691,
+        "conditions": 60,
+        "eligible": 10220,
+        "eligible_weighted_action_entropy": 0.9968069839199323,
+        "eligible_weighted_asr_query_auc": 0.024288649706457926,
+        "normalized_action_entropy": 0.9967850906419489,
+        "pooled_asr": 0.05430528375733855,
+        "successes": 555
+      },
+      "random_action": {
+        "asr": 0.0557463489924752,
+        "asr_query_auc": 0.024825194810429486,
+        "conditions": 60,
+        "eligible": 10220,
+        "eligible_weighted_action_entropy": 0.9987338905678278,
+        "eligible_weighted_asr_query_auc": 0.023590019569471623,
+        "normalized_action_entropy": 0.9987188282960253,
+        "pooled_asr": 0.052935420743639924,
+        "successes": 541
+      },
+      "score_greedy": {
+        "asr": 0.05602132789983676,
+        "asr_query_auc": 0.02468717766376648,
+        "conditions": 60,
+        "eligible": 10220,
+        "eligible_weighted_action_entropy": 0.9993659069103429,
+        "eligible_weighted_asr_query_auc": 0.023472602739726026,
+        "normalized_action_entropy": 0.9993572632293858,
+        "pooled_asr": 0.05332681017612524,
+        "successes": 545
+      }
+    }
+  },
+  "protocol": {
+    "completed_runs": 30,
+    "design": "leave-one-family-out source-attack Phase 1",
+    "expected_runs": 30,
+    "grid_complete": true,
+    "policy_runs": 30,
+    "primary_control": "score_greedy",
+    "query_budget_including_initialization": 50,
+    "source_gate_passed": false
+  },
+  "publication_candidate": false,
+  "research_valid": false,
+  "runtime": {
+    "mean_run_seconds": 1950.880478172466,
+    "mean_source_evaluation_seconds": 371.4032249813681,
+    "source_phase_hours": 16.2604864553925,
+    "source_phase_seconds": 58537.751239413
+  },
+  "schema_version": 1,
+  "status": "source_learning_failed",
+  "study_name": "cifar10-rtx-publication",
+  "study_schema_version": 1,
+  "target_evaluation": {
+    "all_family_victim_clean_validation_performed": true,
+    "held_out_attack_evaluation_calls": 0,
+    "hidden_target_attack_cohort_opened": false,
+    "target_calls": 0,
+    "target_evaluation_performed": false
+  }
+}

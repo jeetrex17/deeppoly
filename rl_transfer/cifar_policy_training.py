@@ -30,6 +30,24 @@ from .research_protocol import train_population_policy
 
 VictimPopulation = Mapping[str, Sequence[tuple[str, nn.Module]]]
 Samples = Sequence[tuple[torch.Tensor, int]]
+SOFT_GRADIENT_BC_ACTION_CONDITIONED_PPO_METHOD = (
+    "soft_gradient_bc_action_conditioned_groupdro_ppo"
+)
+
+
+def main_policy_method_id(config: MacPilotConfig) -> str:
+    """Return the stable evaluation/checkpoint identity for the main policy."""
+
+    if (
+        config.behavior_cloning_episodes > 0
+        and config.behavior_cloning_teacher == "gradient"
+        and config.behavior_cloning_soft_temperature is not None
+        and config.policy_actor_mode == "action_conditioned"
+    ):
+        return SOFT_GRADIENT_BC_ACTION_CONDITIONED_PPO_METHOD
+    if config.train_ablation_policies:
+        return "gradient_bc_groupdro_ppo"
+    return "groupdro_recurrent_ppo"
 
 
 @dataclass(frozen=True)
@@ -57,6 +75,12 @@ def _new_policy(
             entropy_weight=config.policy_entropy_weight,
             update_epochs=config.policy_update_epochs,
         ),
+        actor_mode=config.policy_actor_mode,
+        action_grid_size=(
+            config.grid_size
+            if config.policy_actor_mode == "action_conditioned"
+            else None
+        ),
     ).to(device)
 
 
@@ -73,6 +97,7 @@ def _load_checked(
         expected_observation_dim=attack.recurrent_observation_dim,
         expected_action_dim=attack.action_dim,
         expected_hidden_dim=config.hidden_dim,
+        expected_actor_mode=config.policy_actor_mode,
     )
     if metadata.get("fingerprint") != fingerprint:
         raise ValueError("policy checkpoint fingerprint mismatch")
@@ -96,7 +121,11 @@ def _collect_and_fit_bc(
     shared = {
         "decisions": config.behavior_cloning_steps,
     }
-    if config.behavior_cloning_teacher != "gradient":
+    if config.behavior_cloning_teacher == "gradient":
+        shared["soft_temperature"] = (
+            config.behavior_cloning_soft_temperature
+        )
+    else:
         shared["candidates"] = config.behavior_cloning_candidates
     demonstrations, teacher_metrics = collector(
         source_victims,
@@ -126,19 +155,66 @@ def _collect_and_fit_bc(
         policy,
         validation,
     )
+    if (
+        validation_metrics.get("baseline_provenance")
+        != "evaluated_labels_validation_oracle"
+        or validation_metrics.get("baseline_estimator")
+        != "empirical_best_constant_no_smoothing"
+    ):
+        raise ValueError(
+            "behavior-cloning validation baseline provenance is invalid"
+        )
     digest_after = policy.persistent_digest()
-    gate_passed = bool(
-        validation_metrics["accuracy"]
-        >= max(
-            4.0 * validation_metrics["uniform_accuracy"],
-            validation_metrics["majority_accuracy"] + 0.05,
+    uses_soft_targets = validation_metrics.get("target_mode") in {
+        "soft",
+        "mixed_soft_and_hard",
+    }
+    if uses_soft_targets:
+        gate_passed = bool(
+            validation_metrics["soft_cross_entropy"]
+            <= min(
+                validation_metrics["uniform_soft_cross_entropy"] - 0.05,
+                validation_metrics[
+                    "validation_oracle_soft_cross_entropy"
+                ] - 0.02,
+            )
+            and validation_metrics["top5_accuracy"]
+            >= validation_metrics[
+                "validation_oracle_top5_accuracy"
+            ] + 0.02
         )
-        and validation_metrics["nll"]
-        <= min(
-            validation_metrics["uniform_nll"] - 0.2,
-            validation_metrics["frequency_nll"] - 0.05,
+        gate = {
+            "passed": gate_passed,
+            "objective": "soft_gradient_distillation",
+            "baseline": "evaluated_labels_validation_oracle",
+            "minimum_soft_ce_improvement_over_uniform": 0.05,
+            "minimum_soft_ce_improvement_over_validation_oracle": 0.02,
+            "minimum_top5_gain_over_validation_oracle": 0.02,
+        }
+    else:
+        gate_passed = bool(
+            validation_metrics["accuracy"]
+            >= max(
+                4.0 * validation_metrics["uniform_accuracy"],
+                validation_metrics[
+                    "validation_oracle_top1_accuracy"
+                ] + 0.05,
+            )
+            and validation_metrics["nll"]
+            <= min(
+                validation_metrics["uniform_nll"] - 0.2,
+                validation_metrics["validation_oracle_nll"] - 0.05,
+            )
         )
-    )
+        gate = {
+            "passed": gate_passed,
+            "objective": "hard_action_classification",
+            "baseline": "evaluated_labels_validation_oracle",
+            "minimum_accuracy_multiple_of_uniform": 4.0,
+            "minimum_accuracy_gain_over_validation_oracle": 0.05,
+            "minimum_nll_improvement_over_uniform": 0.2,
+            "minimum_nll_improvement_over_validation_oracle": 0.05,
+        }
     return {
         "enabled": True,
         "method": "sequence_filtered_hindsight_imitation",
@@ -148,13 +224,7 @@ def _collect_and_fit_bc(
         "validation": validation_metrics,
         "policy_digest_before": digest_before,
         "policy_digest_after": digest_after,
-        "gate": {
-            "passed": gate_passed,
-            "minimum_accuracy_multiple_of_uniform": 4.0,
-            "minimum_accuracy_gain_over_majority": 0.05,
-            "minimum_nll_improvement_over_uniform": 0.2,
-            "minimum_nll_improvement_over_frequency": 0.05,
-        },
+        "gate": gate,
         "elapsed_seconds": time.monotonic() - started,
     }
 
@@ -378,12 +448,13 @@ def train_policy_bundle(
                 },
             )
         main_resumed = False
+    main_method_id = main_policy_method_id(config)
     blocks, main_metadata = _continue_ppo(
         main,
         checkpoint_path=main_path,
         fingerprint=fingerprint,
         split_digest=split_digest,
-        kind="gradient_bc_groupdro_ppo",
+        kind=main_method_id,
         behavior_cloning=behavior_cloning,
         completed_episodes=completed,
         training_blocks=blocks,
@@ -475,12 +546,14 @@ def train_policy_bundle(
         }
     training = {
         **main_training,
+        "method_id": main_method_id,
         "component_ablations": ablation_training,
     }
     checkpoints = {
         "main": {
             "path": str(main_path),
             "sha256": sha256_file(main_path),
+            "method_id": main_method_id,
         }
     }
     if config.train_ablation_policies:

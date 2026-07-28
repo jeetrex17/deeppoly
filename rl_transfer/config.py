@@ -2,6 +2,8 @@ from dataclasses import dataclass
 import math
 from typing import Literal
 
+from .features import PatchFeatureMode, patch_image_feature_dimension
+
 
 @dataclass(frozen=True)
 class AttackConfig:
@@ -16,6 +18,7 @@ class AttackConfig:
     rollback_on_non_improvement: bool = False
     action_history_features: bool = False
     image_patch_features: bool = False
+    image_patch_feature_mode: PatchFeatureMode = "means"
 
     def __post_init__(self) -> None:
         if not 0 < self.epsilon <= 1:
@@ -40,6 +43,13 @@ class AttackConfig:
             raise ValueError("action_history_features must be boolean")
         if not isinstance(self.image_patch_features, bool):
             raise ValueError("image_patch_features must be boolean")
+        if (
+            not isinstance(self.image_patch_feature_mode, str)
+            or self.image_patch_feature_mode not in {"means", "statistics"}
+        ):
+            raise ValueError(
+                "image_patch_feature_mode must be 'means' or 'statistics'",
+            )
 
     @property
     def action_dim(self) -> int:
@@ -52,12 +62,16 @@ class AttackConfig:
     @property
     def recurrent_observation_dim(self) -> int:
         history_dim = 2 * self.action_dim if self.action_history_features else 0
-        image_dim = (
-            2 * self.grid_size * self.grid_size * 3
-            if self.image_patch_features
-            else 0
+        return 8 + history_dim + self.image_patch_feature_dim
+
+    @property
+    def image_patch_feature_dim(self) -> int:
+        if not self.image_patch_features:
+            return 0
+        return patch_image_feature_dimension(
+            grid_size=self.grid_size,
+            mode=self.image_patch_feature_mode,
         )
-        return 8 + history_dim + image_dim
 
 
 @dataclass(frozen=True)

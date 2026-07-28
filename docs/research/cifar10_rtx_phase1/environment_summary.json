@@ -1,0 +1,35 @@
+{
+  "code_mapping": {
+    "basis": "editable install pin in the verified dependency freeze",
+    "editable_install_commit": "47bd57e9c6826a9e09203de2adacef64a75ace4e",
+    "editable_install_package": "rl_transfer_research",
+    "editable_install_repository": "https://github.com/jeetrex17/deeppoly",
+    "limitation": "The study run-start environment record did not provide a git revision; the commit mapping comes from the editable dependency pin.",
+    "study_git_revision": null
+  },
+  "dependencies": {
+    "freeze_file": "dependency_freeze.txt",
+    "package_count": 141,
+    "pip_freeze_sha256": "252009b099f31efda62d1aeaf733d647a2a865c6d3f0c17e05aad4c7fcc7f61a",
+    "requirements_file": "requirements/rtx-publication.txt",
+    "requirements_sha256": "e3e3730f92fa37cd3a7edc0b8f43af97d5444ebec8e04937a47f5e9df15db908",
+    "sanitized_freeze_sha256": "252009b099f31efda62d1aeaf733d647a2a865c6d3f0c17e05aad4c7fcc7f61a",
+    "torch": "2.13.0",
+    "torchvision": "0.28.0"
+  },
+  "post_run_workstation_audit": {
+    "gpu_model": "NVIDIA GeForce RTX 2080 Ti",
+    "recorded_at_run_start": false,
+    "same_workstation_reported": true,
+    "source": "operator-reported NVIDIA-SMI audit on the study workstation",
+    "timing": "after study completion"
+  },
+  "run_start_manifest": {
+    "cuda_runtime": "13.0",
+    "cudnn_version": 92000,
+    "git_revision": null,
+    "gpu_model": null,
+    "nvidia_driver": "580.126.09"
+  },
+  "schema_version": 1
+}

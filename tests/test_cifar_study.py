@@ -29,6 +29,7 @@ def _run(
     bandit: float,
     score_greedy: float,
     family: str = "transformer",
+    learned_method: str = "groupdro_recurrent_ppo_stochastic",
 ) -> dict[str, object]:
     def metrics(value: float, entropy: float) -> dict[str, object]:
         return {
@@ -52,7 +53,7 @@ def _run(
         "target_family": family,
         "victim_accuracy_gate": {"passed": True},
         "evaluation": {
-            "groupdro_recurrent_ppo_stochastic": metrics(learned, 0.6),
+            learned_method: metrics(learned, 0.6),
             "random_action": metrics(random, 0.99),
             "bandit_action": metrics(bandit, 0.7),
             "score_greedy": metrics(score_greedy, 0.8),
@@ -61,6 +62,26 @@ def _run(
 
 
 class CIFARStudyTests(unittest.TestCase):
+    def test_soft_action_conditioned_method_is_a_learned_policy(self) -> None:
+        method = (
+            "soft_gradient_bc_action_conditioned_groupdro_ppo_stochastic"
+        )
+        runs = tuple(
+            _run(
+                seed,
+                0.4,
+                0.1,
+                0.15,
+                0.2,
+                learned_method=method,
+            )
+            for seed in (1, 2, 3)
+        )
+
+        summary = summarize_study(runs)
+
+        self.assertTrue(summary["promotion_gate"]["passed"])
+        self.assertIn(method, summary["aggregate"]["transformer"])
     def test_three_seed_promotion_requires_positive_paired_ci_against_every_control(self) -> None:
         passing = summarize_study(
             tuple(_run(seed, 0.40, 0.10, 0.15, 0.20) for seed in (1, 2, 3))

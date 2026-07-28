@@ -5,6 +5,7 @@ import tempfile
 import unittest
 from dataclasses import replace
 from pathlib import Path
+from unittest import mock
 
 import torch
 from torch import nn
@@ -66,6 +67,84 @@ def _method_metrics(
 
 
 class EvaluationIntegrityTests(unittest.TestCase):
+    def test_selected_method_set_can_share_stochastic_draws(self) -> None:
+        from rl_transfer.cifar_evaluation import evaluate_method_set
+        from rl_transfer.research_protocol import FrozenEpisodeResult
+
+        attack = AttackConfig(
+            epsilon=0.1,
+            step_size=0.05,
+            grid_size=1,
+            max_queries=3,
+            rollback_on_non_improvement=True,
+        )
+        policy = RecurrentAttackPolicy(
+            attack.recurrent_observation_dim,
+            attack.action_dim,
+            hidden_dim=8,
+            seed=7,
+        )
+        observed_seeds: list[int] = []
+
+        def frozen_episode(
+            _policy,
+            _victim,
+            _image,
+            _label,
+            sample_id,
+            victim_id,
+            family,
+            _attack,
+            *,
+            deterministic,
+            episode_seed,
+        ):
+            self.assertFalse(deterministic)
+            observed_seeds.append(episode_seed)
+            digest = _policy.persistent_digest()
+            return FrozenEpisodeResult(
+                sample_id=sample_id,
+                victim_id=victim_id,
+                family=family,
+                clean_correct=True,
+                success=False,
+                query_to_success=None,
+                total_target_calls=3,
+                linf=0.1,
+                l2=0.1,
+                actions=(0, 1),
+                policy_digest_before=digest,
+                policy_digest_after=digest,
+                query_trace=(
+                    {
+                        "purpose": "initialization",
+                    },
+                ),
+            )
+
+        with mock.patch(
+            "rl_transfer.cifar_evaluation.run_frozen_episode",
+            side_effect=frozen_episode,
+        ):
+            rows, _, summary = evaluate_method_set(
+                {
+                    "temperature_0p50": (policy, False),
+                    "temperature_1p00": (policy, False),
+                },
+                (("victim-0", nn.Identity()),),
+                ((torch.full((3, 4, 4), 0.7), 0),),
+                (123,),
+                attack,
+                11,
+                "classical_cnn",
+                lambda _message: None,
+                stochastic_seed_namespace="phase2-learned-stochastic",
+            )
+
+        self.assertEqual(len(rows), 2)
+        self.assertEqual(len(summary), 2)
+        self.assertEqual(observed_seeds[0], observed_seeds[1])
+
     def _evaluated_fixture(
         self,
     ) -> tuple[

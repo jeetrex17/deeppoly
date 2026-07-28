@@ -189,7 +189,9 @@ class RecurrentArtifactTests(unittest.TestCase):
             save_recurrent_checkpoint(path, policy, metadata)
             restored, restored_metadata = load_recurrent_checkpoint(path, device="cpu")
             payload = torch.load(path, map_location="cpu", weights_only=True)
-        self.assertEqual(payload["schema_version"], 1)
+        self.assertEqual(payload["schema_version"], 2)
+        self.assertEqual(payload["actor_mode"], "flat")
+        self.assertIsNone(payload["action_grid_size"])
         self.assertEqual(policy.persistent_digest(), restored.persistent_digest())
         self.assertEqual(restored_metadata, metadata)
 

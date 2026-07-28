@@ -1,11 +1,9 @@
 from dataclasses import asdict, replace
 import hashlib
-import inspect
 import json
 from pathlib import Path
 import platform
 import statistics
-import subprocess
 import time
 from typing import Callable
 
@@ -25,6 +23,19 @@ from .cifar_data import (
     disjoint_balanced_subsets,
     indices_digest,
 )
+from .cifar_execution import (
+    CIFAR_VICTIM_FAMILIES,
+    portable_checkpoint_records,
+    portable_descendant,
+    preflight_cache_only_victims,
+    validate_victim_population,
+)
+from .cifar_manifest import (
+    code_digest as _code_digest,
+    git_revision as _git_revision,
+    git_worktree_state as _git_worktree_state,
+    write_json as _write_json,
+)
 from .cifar_models import build_cifar_victim_population
 from .cifar_policy_training import train_policy_bundle
 from .cifar_source_evaluation import source_evidence
@@ -33,136 +44,18 @@ from .cifar_training import (
     classifier_accuracy as _classifier_accuracy,
     train_classifier as _train_classifier,
 )
-from .config import AttackConfig
+from .cifar_victim_cache import (
+    victim_cache_contract as _victim_cache_contract,
+    victim_cache_digest as _victim_cache_digest,
+    victim_code_digest as _victim_code_digest,
+)
 from .models import freeze_model
 from .paths import resolve_descendant
+from .phase2_policy import FrozenTemperaturePolicy
 from .reproducibility import seed_everything
 from .runtime import resolve_device
 from .source_gates import SourceGateThresholds
 from .victim_provenance import victim_bank_digest
-
-def _git_revision() -> str:
-    try:
-        result = subprocess.run(
-            ("git", "rev-parse", "HEAD"),
-            check=True,
-            capture_output=True,
-            text=True,
-        )
-        return result.stdout.strip()
-    except (OSError, subprocess.CalledProcessError):
-        return "unknown"
-
-
-def _code_digest() -> str:
-    hasher = hashlib.sha256()
-    package_root = Path(__file__).parent
-    for path in sorted(package_root.glob("*.py")):
-        hasher.update(path.name.encode("utf-8"))
-        hasher.update(path.read_bytes())
-    return hasher.hexdigest()
-
-
-def _victim_cache_digest(
-    config: MacPilotConfig,
-    split_digest: str,
-    dataset_version: str,
-    victim_code_digest: str,
-    device_type: str,
-) -> str:
-    """Fingerprint only inputs that can change victim fitting.
-
-    Target-family selection and policy hyperparameters are intentionally absent,
-    allowing a study seed to reuse the same fitted victim bank across every
-    leave-one-family-out fold.
-    """
-
-    payload = _victim_cache_contract(
-        config,
-        split_digest,
-        dataset_version,
-        victim_code_digest,
-        device_type,
-    )
-    encoded = json.dumps(payload, sort_keys=True, separators=(",", ":"))
-    return hashlib.sha256(encoded.encode("utf-8")).hexdigest()
-
-
-def _victim_cache_contract(
-    config: MacPilotConfig,
-    split_digest: str,
-    dataset_version: str,
-    victim_code_digest: str,
-    device_type: str,
-) -> dict[str, object]:
-    return {
-        "schema_version": 1,
-        "dataset": config.dataset,
-        "dataset_version": dataset_version,
-        "split_digest": split_digest,
-        "victim_seed": (
-            config.victim_seed if config.victim_seed is not None else config.seed
-        ),
-        "victim_profile": config.victim_profile,
-        "victim_train_images": config.victim_train_images,
-        "source_validation_images": config.source_validation_images,
-        "victim_epochs": config.victim_epochs,
-        "victim_learning_rate": config.victim_learning_rate,
-        "batch_size": config.batch_size,
-        "num_workers": config.num_workers,
-        "victim_code_digest": victim_code_digest,
-        "device_type": device_type,
-        "torch_version": torch.__version__,
-    }
-
-
-def _victim_code_digest() -> str:
-    hasher = hashlib.sha256()
-    hasher.update((Path(__file__).parent / "cifar_models.py").read_bytes())
-    hasher.update((Path(__file__).parent / "reproducibility.py").read_bytes())
-    hasher.update(inspect.getsource(_train_classifier).encode("utf-8"))
-    return hasher.hexdigest()
-
-
-def _git_worktree_state() -> dict[str, object]:
-    try:
-        result = subprocess.run(
-            ("git", "status", "--porcelain=v1", "--untracked-files=all"),
-            check=True,
-            capture_output=True,
-            text=True,
-        )
-    except (OSError, subprocess.CalledProcessError):
-        return {"dirty": None, "status_sha256": None}
-    status = result.stdout
-    return {
-        "dirty": bool(status),
-        "status_sha256": hashlib.sha256(status.encode("utf-8")).hexdigest(),
-    }
-
-
-def _write_json(path: Path, payload: dict[str, object]) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    temporary = resolve_descendant(
-        path.parent,
-        path.with_suffix(path.suffix + ".tmp"),
-        label="JSON temporary file",
-    )
-    temporary.write_text(json.dumps(payload, indent=2, sort_keys=True, allow_nan=False))
-    temporary.replace(path)
-    checksum = resolve_descendant(
-        path.parent,
-        path.with_suffix(path.suffix + ".sha256"),
-        label="JSON checksum",
-    )
-    checksum_temporary = resolve_descendant(
-        path.parent,
-        checksum.with_suffix(checksum.suffix + ".tmp"),
-        label="JSON checksum temporary file",
-    )
-    checksum_temporary.write_text(sha256_file(path) + "\n")
-    checksum_temporary.replace(checksum)
-
 
 def _checkpoint_matches(metadata: dict[str, object], fingerprint: str) -> None:
     if metadata.get("fingerprint") != fingerprint:
@@ -177,7 +70,44 @@ def run_cifar_pilot_from_datasets(
     dataset_version: str = "in-memory-fixture",
     progress: Callable[[str], None] | None = None,
     evaluate_target: bool = True,
+    source_victims_only: bool = False,
+    victim_cache_only: bool = False,
+    victim_cache_dataset_version: str | None = None,
+    portable_paths: bool = False,
 ) -> dict[str, object]:
+    for label, value in (
+        ("evaluate_target", evaluate_target),
+        ("source_victims_only", source_victims_only),
+        ("victim_cache_only", victim_cache_only),
+        ("portable_paths", portable_paths),
+    ):
+        if not isinstance(value, bool):
+            raise TypeError(f"{label} must be a boolean")
+    if source_victims_only and evaluate_target:
+        raise ValueError(
+            "source_victims_only requires evaluate_target=False"
+        )
+    if victim_cache_only and not resume:
+        raise ValueError("victim_cache_only requires resume=True")
+    if victim_cache_dataset_version is not None and (
+        not isinstance(victim_cache_dataset_version, str)
+        or not victim_cache_dataset_version
+    ):
+        raise TypeError(
+            "victim_cache_dataset_version must be a non-empty string"
+        )
+    if (
+        victim_cache_dataset_version is not None
+        and not victim_cache_only
+    ):
+        raise ValueError(
+            "victim_cache_dataset_version is cache-only metadata"
+        )
+    cache_dataset_version = (
+        victim_cache_dataset_version
+        if victim_cache_dataset_version is not None
+        else dataset_version
+    )
     report = progress or (lambda _message: None)
     started = time.monotonic()
     seed_everything(config.seed)
@@ -238,14 +168,14 @@ def run_cifar_pilot_from_datasets(
     victim_cache_contract = _victim_cache_contract(
         config,
         split.digest,
-        dataset_version,
+        cache_dataset_version,
         victim_code_digest,
         device.type,
     )
     victim_cache_digest = _victim_cache_digest(
         config,
         split.digest,
-        dataset_version,
+        cache_dataset_version,
         victim_code_digest,
         device.type,
     )
@@ -267,13 +197,22 @@ def run_cifar_pilot_from_datasets(
         label="pilot manifest",
     )
     report(f"run directory: {run_dir}")
+    manifest_run_dir = (
+        portable_descendant(
+            output_root,
+            run_dir,
+            label="portable pilot run directory",
+        )
+        if portable_paths
+        else str(run_dir)
+    )
     manifest: dict[str, object] = {
         "schema_version": 1,
         "name": config.name,
         "status": "running",
         "research_valid": False,
         "fingerprint": fingerprint,
-        "run_dir": str(run_dir),
+        "run_dir": manifest_run_dir,
         "config": asdict(config),
         "config_digest": config.digest(),
         "split_digest": split.digest,
@@ -292,9 +231,15 @@ def run_cifar_pilot_from_datasets(
         "target_family": config.target_family,
         "source_families": [
             family
-            for family in ("classical_cnn", "modern_cnn", "transformer")
+            for family in CIFAR_VICTIM_FAMILIES
             if family != config.target_family
         ],
+        "execution_mode": {
+            "evaluate_target": evaluate_target,
+            "source_victims_only": source_victims_only,
+            "victim_cache_only": victim_cache_only,
+            "portable_paths": portable_paths,
+        },
         "dataset": {"name": config.dataset, "version": dataset_version},
         "device": selection.as_dict(),
         "runtime": {
@@ -327,9 +272,19 @@ def run_cifar_pilot_from_datasets(
         },
         "victim_cache_digest": victim_cache_digest,
         "victim_cache_contract": victim_cache_contract,
+        "victim_cache_dataset_version": cache_dataset_version,
         "victim_code_digest": victim_code_digest,
     }
     _write_json(manifest_path, manifest)
+    selected_families = (
+        tuple(
+            family
+            for family in CIFAR_VICTIM_FAMILIES
+            if family != config.target_family
+        )
+        if source_victims_only
+        else CIFAR_VICTIM_FAMILIES
+    )
     instance_counts = {
         family: (
             config.target_instances_per_family
@@ -339,12 +294,17 @@ def run_cifar_pilot_from_datasets(
                 + config.source_holdout_instances_per_family
             )
         )
-        for family in ("classical_cnn", "modern_cnn", "transformer")
+        for family in selected_families
     }
     victim_population = build_cifar_victim_population(
         victim_seed,
         instance_counts,
+        families=selected_families,
         profile=config.victim_profile,
+    )
+    victim_ids = validate_victim_population(
+        victim_population,
+        instance_counts,
     )
     victim_metrics: dict[str, object] = {}
     victim_instance_metrics: dict[str, list[dict[str, object]]] = {}
@@ -358,6 +318,11 @@ def run_cifar_pilot_from_datasets(
         victim_cache_digest[:12],
         label="victim cache directory",
     )
+    if victim_cache_only:
+        preflight_cache_only_victims(
+            victim_cache_dir,
+            victim_ids,
+        )
     for family, instances in victim_population.items():
         family_metrics: list[dict[str, object]] = []
         for instance_index, (victim_id, model) in enumerate(instances):
@@ -395,6 +360,11 @@ def run_cifar_pilot_from_datasets(
                         metadata.get("fit_elapsed_seconds", 0.0)
                     )
                     resumed = True
+                elif victim_cache_only:
+                    raise ValueError(
+                        "cache-only victim checkpoint became unavailable "
+                        f"after preflight: {victim_id}"
+                    )
                 else:
                     report(f"training {family} victim instance {instance_index} ({victim_id})")
                     fit_started = time.monotonic()
@@ -439,7 +409,15 @@ def run_cifar_pilot_from_datasets(
                 "family": family,
                 "instance_index": instance_index,
                 "training_seed": training_seed,
-                "checkpoint": str(checkpoint_path),
+                "checkpoint": (
+                    portable_descendant(
+                        output_root,
+                        checkpoint_path,
+                        label="portable victim checkpoint",
+                    )
+                    if portable_paths
+                    else str(checkpoint_path)
+                ),
                 "checkpoint_sha256": sha256_file(checkpoint_path),
                 "history": history,
                 "fit_elapsed_seconds": fit_elapsed_seconds,
@@ -449,19 +427,7 @@ def run_cifar_pilot_from_datasets(
             family_metrics.append(metrics)
         victim_instance_metrics[family] = family_metrics
         victim_metrics[family] = family_metrics[0]
-    attack = AttackConfig(
-        epsilon=config.epsilon,
-        step_size=config.step_size,
-        grid_size=config.grid_size,
-        max_queries=config.query_budget,
-        reward_mode=config.reward_mode,
-        margin_reward_scale=config.margin_reward_scale,
-        terminal_success_bonus=config.terminal_success_bonus,
-        query_penalty=config.query_penalty,
-        rollback_on_non_improvement=config.rollback_on_non_improvement,
-        action_history_features=config.action_history_features,
-        image_patch_features=config.image_patch_features,
-    )
+    attack = config.attack_config()
     source_victims = {
         family: instances[: config.source_instances_per_family]
         for family, instances in victim_population.items()
@@ -513,7 +479,19 @@ def run_cifar_pilot_from_datasets(
         report=report,
     )
     policy = policy_bundle.main
+    evaluation_policy = FrozenTemperaturePolicy(
+        policy,
+        config.policy_evaluation_temperature,
+    )
     training = policy_bundle.training
+    manifest_policy_checkpoints = (
+        portable_checkpoint_records(
+            policy_bundle.checkpoints,
+            run_dir=run_dir,
+        )
+        if portable_paths
+        else policy_bundle.checkpoints
+    )
     policy_resumed = policy_bundle.main_resumed
     behavior_cloning = training["behavior_cloning"]
     policy_path = Path(policy_bundle.checkpoints["main"]["path"])
@@ -534,17 +512,36 @@ def run_cifar_pilot_from_datasets(
         )
         else {}
     )
-    main_method_prefix = (
-        "gradient_bc_groupdro_ppo"
-        if config.train_ablation_policies
-        else "groupdro_recurrent_ppo"
-    )
+    evaluation_ablation_policies = {
+        method: (
+            FrozenTemperaturePolicy(
+                ablation_policy,
+                config.policy_evaluation_temperature,
+            ),
+            deterministic,
+        )
+        for method, (
+            ablation_policy,
+            deterministic,
+        ) in ablation_policies.items()
+    }
+    raw_main_method_prefix = training.get("method_id")
+    if (
+        not isinstance(raw_main_method_prefix, str)
+        or not raw_main_method_prefix
+    ):
+        raise RuntimeError("policy training did not provide a method ID")
+    main_method_prefix = raw_main_method_prefix
     report(f"trained policy episodes: {training['trained_episodes']}")
 
-    accuracy_thresholds = {
+    all_accuracy_thresholds = {
         "classical_cnn": config.classical_cnn_min_accuracy,
         "modern_cnn": config.modern_cnn_min_accuracy,
         "transformer": config.transformer_min_accuracy,
+    }
+    accuracy_thresholds = {
+        family: all_accuracy_thresholds[family]
+        for family in victim_instance_metrics
     }
     victim_accuracy_gate = {
         "thresholds": accuracy_thresholds,
@@ -556,12 +553,49 @@ def run_cifar_pilot_from_datasets(
             for family, threshold in accuracy_thresholds.items()
         ),
     }
+    model_instances_by_family = {
+        family: len(victim_population.get(family, ()))
+        for family in CIFAR_VICTIM_FAMILIES
+    }
+    validation_evaluations_by_family = {
+        family: len(victim_instance_metrics.get(family, ()))
+        for family in CIFAR_VICTIM_FAMILIES
+    }
+    heldout_model_calls = model_instances_by_family[
+        config.target_family
+    ]
+    heldout_validation_calls = validation_evaluations_by_family[
+        config.target_family
+    ]
+    victim_access_audit = {
+        "source_victims_only": source_victims_only,
+        "victim_cache_only": victim_cache_only,
+        "constructed_families": list(victim_population),
+        "untouched_families": (
+            [config.target_family] if source_victims_only else []
+        ),
+        "model_instances_by_family": model_instances_by_family,
+        "validation_evaluations_by_family": (
+            validation_evaluations_by_family
+        ),
+        "heldout_family": config.target_family,
+        "heldout_family_model_calls": heldout_model_calls,
+        "heldout_family_validation_calls": heldout_validation_calls,
+        "passed": (
+            not source_victims_only
+            or (
+                heldout_model_calls == 0
+                and heldout_validation_calls == 0
+                and config.target_family not in victim_population
+            )
+        ),
+    }
     if config.source_evaluation_images > 0:
         source_indices = source_gate_indices
         source_samples = _dataset_samples(train_dataset, source_indices)
         evidence = source_evidence(
-            policy=policy,
-            additional_policies=ablation_policies,
+            policy=evaluation_policy,
+            additional_policies=evaluation_ablation_policies,
             source_victims=source_victims,
             source_holdout_victims=source_holdout_victims,
             samples=source_samples,
@@ -584,7 +618,7 @@ def run_cifar_pilot_from_datasets(
                 "code_digest": code_digest,
                 "split_digest": split.digest,
                 "data_role_digests": role_digests,
-                "policy_checkpoints": policy_bundle.checkpoints,
+                "policy_checkpoints": manifest_policy_checkpoints,
                 "source_victim_checkpoints": (
                     source_victim_checkpoints
                 ),
@@ -616,16 +650,25 @@ def run_cifar_pilot_from_datasets(
         "victim_instances": victim_instance_metrics,
         "victim_bank_digest": bank_digest,
         "policy": {
-            "checkpoint": str(policy_path),
+            "checkpoint": (
+                portable_descendant(
+                    run_dir,
+                    policy_path,
+                    label="portable main policy checkpoint",
+                )
+                if portable_paths
+                else str(policy_path)
+            ),
             "checkpoint_sha256": sha256_file(policy_path),
             "persistent_digest": policy.persistent_digest(),
-            "checkpoints": policy_bundle.checkpoints,
+            "checkpoints": manifest_policy_checkpoints,
             "resumed": policy_resumed,
             "training": training,
             "training_fingerprint": policy_fingerprint,
             "training_binding": policy_binding,
         },
         "victim_accuracy_gate": victim_accuracy_gate,
+        "victim_access_audit": victim_access_audit,
         "source_evaluation": source_evaluation,
         "source_evaluation_audits": source_evaluation_audits,
         "source_cache_resumed": source_cache_resumed,
@@ -665,7 +708,7 @@ def run_cifar_pilot_from_datasets(
         "code_digest": code_digest,
         "split_digest": split.digest,
         "data_role_digests": role_digests,
-        "policy_checkpoints": policy_bundle.checkpoints,
+        "policy_checkpoints": manifest_policy_checkpoints,
         "target_victim_checkpoints": {
             metrics["victim_id"]: metrics["checkpoint_sha256"]
             for metrics in victim_instance_metrics[
@@ -697,8 +740,8 @@ def run_cifar_pilot_from_datasets(
             )
 
     evidence = target_evidence(
-        policy=policy,
-        additional_policies=ablation_policies,
+        policy=evaluation_policy,
+        additional_policies=evaluation_ablation_policies,
         target_victims=victim_population[config.target_family],
         samples=target_samples,
         indices=split.outer_test,

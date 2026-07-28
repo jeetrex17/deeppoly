@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "name": "cifar10-rtx-phase2-action-conditioned-screen",
+  "research_valid": false,
+  "base_config": "configs/rl_transfer/cifar10_rtx_phase2_base.json",
+  "output_dir": "output/rl_transfer/cifar10_rtx_phase2_screen",
+  "device": "cuda",
+  "seeds": [
+    17
+  ],
+  "target_families": [
+    "classical_cnn",
+    "modern_cnn",
+    "transformer"
+  ],
+  "resume": true,
+  "split_seed": 20260727,
+  "victim_seed": 1000000,
+  "victim_cache_source": "output/rl_transfer/cifar10_rtx_publication/cifar10-rtx-publication/runs/victim_cache",
+  "victim_study_manifest": "output/rl_transfer/cifar10_rtx_publication/cifar10-rtx-publication/study_manifest.json",
+  "victim_study_manifest_sha256": "791140871a987ec400cca083aea9b1192d8e73f2a5e70e5504dcfcae7f85911d",
+  "require_verified_victim_cache": true,
+  "max_wall_clock_minutes": 60,
+  "estimated_minutes_per_cell": 12,
+  "minimum_mean_bc_accuracy_gain": 0.01,
+  "minimum_mean_bc_nll_improvement": 0.02,
+  "minimum_mean_score_asr_gain": 0.01,
+  "minimum_mean_score_auc_gain": 0.005,
+  "minimum_positive_condition_fraction": 0.67
+}

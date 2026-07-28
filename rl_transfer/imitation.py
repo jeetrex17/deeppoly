@@ -15,12 +15,17 @@ from torch import nn
 from .actions import apply_action, patch_catalog
 from .audit import AuditedVictim
 from .config import AttackConfig
-from .features import patch_image_features
+from .features import configured_patch_image_features
 from .operator import AttackOperatorContract, choose_attack_transition
 from .population import balanced_family_schedule
 from .recurrent import RecurrentAttackPolicy
 from .research_protocol import calibration_resistant_observation
 from .rewards import recurrent_attack_reward, score_margin
+from .soft_distillation import (
+    evaluate_behavior_clone_policy_impl,
+    fit_behavior_clone_policy,
+    validated_action_distribution,
+)
 
 
 @dataclass(frozen=True)
@@ -30,6 +35,7 @@ class BehaviorCloneStep:
     accepted: bool
     trajectory_id: str
     step_index: int
+    action_distribution: tuple[float, ...] | None
 
     def __init__(
         self,
@@ -38,6 +44,7 @@ class BehaviorCloneStep:
         accepted: bool,
         trajectory_id: str = "trajectory-0",
         step_index: int = 0,
+        action_distribution: Iterable[float] | np.ndarray | None = None,
     ) -> None:
         numeric = tuple(float(value) for value in observation)
         if not numeric or any(not math.isfinite(value) for value in numeric):
@@ -54,106 +61,16 @@ class BehaviorCloneStep:
             or step_index < 0
         ):
             raise ValueError("step_index must be a non-negative integer")
+        distribution = validated_action_distribution(
+            action,
+            action_distribution,
+        )
         object.__setattr__(self, "observation", numeric)
         object.__setattr__(self, "action", action)
         object.__setattr__(self, "accepted", accepted)
         object.__setattr__(self, "trajectory_id", trajectory_id)
         object.__setattr__(self, "step_index", step_index)
-
-
-def _group_trajectories(
-    examples: Sequence[BehaviorCloneStep],
-) -> tuple[tuple[BehaviorCloneStep, ...], ...]:
-    grouped: dict[str, list[BehaviorCloneStep]] = {}
-    for step in examples:
-        grouped.setdefault(step.trajectory_id, []).append(step)
-    return tuple(
-        tuple(
-            sorted(
-                trajectory,
-                key=lambda step: step.step_index,
-            )
-        )
-        for trajectory in grouped.values()
-    )
-
-
-def _sequence_tensors(
-    trajectories: Sequence[Sequence[BehaviorCloneStep]],
-    observation_dim: int,
-    device: torch.device,
-) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
-    batch_size = len(trajectories)
-    max_steps = max(len(trajectory) for trajectory in trajectories)
-    observations = torch.zeros(
-        (batch_size, max_steps, observation_dim),
-        dtype=torch.float32,
-        device=device,
-    )
-    actions = torch.zeros(
-        (batch_size, max_steps),
-        dtype=torch.long,
-        device=device,
-    )
-    valid = torch.zeros(
-        (batch_size, max_steps),
-        dtype=torch.bool,
-        device=device,
-    )
-    accepted = torch.zeros_like(valid)
-    for trajectory_index, trajectory in enumerate(trajectories):
-        for step_index, step in enumerate(trajectory):
-            observations[trajectory_index, step_index] = torch.tensor(
-                step.observation,
-                dtype=torch.float32,
-                device=device,
-            )
-            actions[trajectory_index, step_index] = step.action
-            valid[trajectory_index, step_index] = True
-            accepted[trajectory_index, step_index] = step.accepted
-    return observations, actions, valid, accepted
-
-
-def _sequence_logits(
-    policy: RecurrentAttackPolicy,
-    observations: torch.Tensor,
-    valid: torch.Tensor,
-) -> torch.Tensor:
-    hidden = policy.initial_state(batch_size=observations.shape[0])
-    logits_by_step: list[torch.Tensor] = []
-    for step_index in range(observations.shape[1]):
-        logits, _, proposed_hidden = policy(
-            observations[:, step_index],
-            hidden,
-        )
-        step_valid = valid[:, step_index].unsqueeze(1)
-        hidden = torch.where(step_valid, proposed_hidden, hidden)
-        logits_by_step.append(logits)
-    return torch.stack(logits_by_step, dim=1)
-
-
-def _frequency_baselines(
-    actions: Sequence[int],
-    action_dim: int,
-) -> dict[str, float]:
-    counts = np.bincount(
-        np.asarray(actions, dtype=int),
-        minlength=action_dim,
-    )
-    total = int(counts.sum())
-    probabilities = (counts + 1) / (total + action_dim)
-    return {
-        "majority_accuracy": float(counts.max() / total),
-        "frequency_nll": float(
-            -np.mean(
-                np.log(
-                    probabilities[
-                        np.asarray(actions, dtype=int)
-                    ]
-                )
-            )
-        ),
-    }
+        object.__setattr__(self, "action_distribution", distribution)
 
 
 def behavior_clone_policy(
@@ -173,130 +90,20 @@ def behavior_clone_policy(
         raise ValueError("behavior-cloning batch size must be a positive integer")
     if any(not isinstance(step, BehaviorCloneStep) for step in examples):
         raise ValueError("steps must contain BehaviorCloneStep values")
-    accepted = tuple(step for step in examples if step.accepted)
-    if not accepted:
-        raise ValueError("behavior cloning requires at least one accepted source action")
-    if any(len(step.observation) != policy.observation_dim for step in accepted):
-        raise ValueError("demonstration observation dimension does not match the policy")
-    if any(step.action >= policy.action_dim for step in accepted):
-        raise ValueError("demonstration action is outside the policy action catalog")
-
-    trajectories = _group_trajectories(examples)
-    device = next(policy.parameters()).device
-    rng = np.random.default_rng(seed)
-    history: list[dict[str, float]] = []
-    policy.train()
-    for epoch in range(epochs):
-        order = rng.permutation(len(trajectories))
-        loss_sum = 0.0
-        correct = 0
-        count = 0
-        for start in range(0, len(order), batch_size):
-            batch = tuple(
-                trajectories[int(index)]
-                for index in order[start:start + batch_size]
-            )
-            observations, actions, valid, accepted_mask = _sequence_tensors(
-                batch,
-                policy.observation_dim,
-                device,
-            )
-            logits = _sequence_logits(policy, observations, valid)
-            selected_logits = logits[accepted_mask]
-            selected_actions = actions[accepted_mask]
-            if not len(selected_actions):
-                continue
-            loss = nn.functional.cross_entropy(
-                selected_logits,
-                selected_actions,
-            )
-            policy.optimizer.zero_grad(set_to_none=True)
-            loss.backward()
-            nn.utils.clip_grad_norm_(
-                policy.parameters(),
-                policy.config.gradient_clip_norm,
-            )
-            policy.optimizer.step()
-            selected_count = len(selected_actions)
-            loss_sum += float(loss.detach()) * selected_count
-            correct += int(
-                (
-                    selected_logits.argmax(1)
-                    == selected_actions
-                ).sum()
-            )
-            count += selected_count
-        history.append(
-            {
-                "epoch": float(epoch + 1),
-                "loss": loss_sum / count,
-                "accuracy": correct / count,
-            }
-        )
-    policy.eval()
-    baselines = _frequency_baselines(
-        tuple(step.action for step in accepted),
-        policy.action_dim,
+    return fit_behavior_clone_policy(
+        policy,
+        examples,
+        epochs=epochs,
+        seed=seed,
+        batch_size=batch_size,
     )
-    return {
-        "training_mode": "sequence_filtered_hindsight_imitation",
-        "trajectories": len(trajectories),
-        "accepted_steps": len(accepted),
-        "rejected_steps": len(examples) - len(accepted),
-        "epochs": epochs,
-        "uniform_accuracy": 1.0 / policy.action_dim,
-        "uniform_nll": math.log(policy.action_dim),
-        "final_loss": history[-1]["loss"],
-        "final_accuracy": history[-1]["accuracy"],
-        "history": history,
-        **baselines,
-    }
 
 
 def evaluate_behavior_clone_policy(
     policy: RecurrentAttackPolicy,
     steps: Iterable[BehaviorCloneStep],
-) -> dict[str, float | int]:
-    examples = tuple(steps)
-    accepted = tuple(step for step in examples if step.accepted)
-    if not accepted:
-        raise ValueError("behavior-cloning evaluation requires accepted actions")
-    if any(len(step.observation) != policy.observation_dim for step in accepted):
-        raise ValueError("evaluation observation dimension does not match the policy")
-    if any(step.action >= policy.action_dim for step in accepted):
-        raise ValueError("evaluation action is outside the policy catalog")
-    trajectories = _group_trajectories(examples)
-    device = next(policy.parameters()).device
-    observations, actions, valid, accepted_mask = _sequence_tensors(
-        trajectories,
-        policy.observation_dim,
-        device,
-    )
-    with torch.inference_mode():
-        logits = _sequence_logits(policy, observations, valid)
-        selected_logits = logits[accepted_mask]
-        selected_actions = actions[accepted_mask]
-        nll = nn.functional.cross_entropy(
-            selected_logits,
-            selected_actions,
-        )
-        accuracy = (
-            selected_logits.argmax(1) == selected_actions
-        ).float().mean()
-    baselines = _frequency_baselines(
-        tuple(step.action for step in accepted),
-        policy.action_dim,
-    )
-    return {
-        "training_mode": "sequence_filtered_hindsight_imitation",
-        "trajectories": len(trajectories),
-        "accepted_steps": len(accepted),
-        "nll": float(nll),
-        "accuracy": float(accuracy),
-        "uniform_nll": math.log(policy.action_dim),
-        "uniform_accuracy": 1.0 / policy.action_dim,
-        **baselines,
-    }
+) -> dict[str, float | int | str]:
+    return evaluate_behavior_clone_policy_impl(policy, tuple(steps))
 
 
 def _victim_device(victim: nn.Module, image: torch.Tensor) -> torch.device:
@@ -419,14 +226,10 @@ def collect_best_of_k_demonstrations(
                 decision / max(1, decisions),
                 action_counts if config.action_history_features else None,
                 action_values if config.action_history_features else None,
-                (
-                    patch_image_features(
-                        original,
-                        accepted_image,
-                        grid_size=config.grid_size,
-                    )
-                    if config.image_patch_features
-                    else None
+                configured_patch_image_features(
+                    original,
+                    accepted_image,
+                    config,
                 ),
             )
             episode_key = hashlib.sha256(
@@ -538,6 +341,7 @@ def collect_gradient_demonstrations(
     episodes: int,
     decisions: int,
     seed: int,
+    soft_temperature: float | None = None,
 ) -> tuple[tuple[BehaviorCloneStep, ...], dict[str, object]]:
     """Label source actions with a privileged gradient teacher.
 
@@ -555,6 +359,13 @@ def collect_gradient_demonstrations(
         raise ValueError("gradient-teacher controls must be integers")
     if episodes < 1 or decisions < 1:
         raise ValueError("gradient-teacher episodes and decisions must be positive")
+    if soft_temperature is not None and (
+        isinstance(soft_temperature, bool)
+        or not isinstance(soft_temperature, (int, float))
+        or not math.isfinite(float(soft_temperature))
+        or float(soft_temperature) <= 0
+    ):
+        raise ValueError("soft_temperature must be finite and positive")
     if not config.rollback_on_non_improvement:
         raise ValueError("gradient demonstrations require the matched rollback operator")
 
@@ -569,6 +380,15 @@ def collect_gradient_demonstrations(
     gradient_evaluations = {family: 0 for family in normalized_victims}
     eligible = {family: 0 for family in normalized_victims}
     successes = {family: 0 for family in normalized_victims}
+    soft_target_entropy_sum = 0.0
+    soft_target_expected_regret_sum = 0.0
+    soft_target_expected_normalized_regret_sum = 0.0
+    soft_target_top1_mass_sum = 0.0
+    soft_target_cost_scale_sum = 0.0
+    soft_target_min_cost_scale = math.inf
+    soft_target_max_cost_scale = 0.0
+    soft_target_count = 0
+    soft_target_generated_count = 0
     collected: list[BehaviorCloneStep] = []
     for episode, family in enumerate(schedule):
         instances = normalized_victims[family]
@@ -609,14 +429,10 @@ def collect_gradient_demonstrations(
                 decision / max(1, decisions),
                 action_counts if config.action_history_features else None,
                 action_values if config.action_history_features else None,
-                (
-                    patch_image_features(
-                        original,
-                        accepted_image,
-                        grid_size=config.grid_size,
-                    )
-                    if config.image_patch_features
-                    else None
+                configured_patch_image_features(
+                    original,
+                    accepted_image,
+                    config,
                 ),
             )
             differentiable = accepted_image.detach().clone().requires_grad_(True)
@@ -650,6 +466,62 @@ def collect_gradient_demonstrations(
                 proposals,
                 key=lambda value: value[0],
             )
+            action_distribution: tuple[float, ...] | None = None
+            soft_diagnostics: tuple[
+                float,
+                float,
+                float,
+                float,
+                float,
+            ] | None = None
+            if soft_temperature is not None:
+                linearized_costs = np.asarray(
+                    tuple(value[0] for value in proposals),
+                    dtype=np.float64,
+                )
+                if not np.isfinite(linearized_costs).all():
+                    raise ValueError(
+                        "soft gradient teacher requires finite linearized costs"
+                    )
+                relative_costs = linearized_costs - linearized_costs.min()
+                cost_scale = max(
+                    float(np.std(linearized_costs)),
+                    float(np.finfo(np.float64).eps),
+                )
+                normalized_relative_costs = relative_costs / cost_scale
+                unnormalized = np.exp(
+                    -normalized_relative_costs / float(soft_temperature)
+                )
+                normalization = float(unnormalized.sum())
+                if not math.isfinite(normalization) or normalization <= 0:
+                    raise ValueError(
+                        "soft gradient teacher produced an invalid normalization"
+                    )
+                probabilities = unnormalized / normalization
+                action_distribution = tuple(
+                    float(value) for value in probabilities
+                )
+                positive = probabilities > 0
+                target_entropy = float(
+                    -np.sum(
+                        probabilities[positive]
+                        * np.log(probabilities[positive])
+                    )
+                )
+                expected_regret = float(
+                    np.dot(probabilities, relative_costs),
+                )
+                expected_normalized_regret = float(
+                    np.dot(probabilities, normalized_relative_costs),
+                )
+                soft_diagnostics = (
+                    target_entropy,
+                    expected_regret,
+                    expected_normalized_regret,
+                    float(probabilities.max()),
+                    cost_scale,
+                )
+                soft_target_generated_count += 1
             selected_response = oracle.query(
                 selected_proposal,
                 sample_id,
@@ -667,6 +539,30 @@ def collect_gradient_demonstrations(
                 success=success,
                 rollback_on_non_improvement=True,
             )
+            if transition.accepted and soft_diagnostics is not None:
+                (
+                    target_entropy,
+                    expected_regret,
+                    expected_normalized_regret,
+                    target_top1_mass,
+                    cost_scale,
+                ) = soft_diagnostics
+                soft_target_entropy_sum += target_entropy
+                soft_target_expected_regret_sum += expected_regret
+                soft_target_expected_normalized_regret_sum += (
+                    expected_normalized_regret
+                )
+                soft_target_top1_mass_sum += target_top1_mass
+                soft_target_cost_scale_sum += cost_scale
+                soft_target_min_cost_scale = min(
+                    soft_target_min_cost_scale,
+                    cost_scale,
+                )
+                soft_target_max_cost_scale = max(
+                    soft_target_max_cost_scale,
+                    cost_scale,
+                )
+                soft_target_count += 1
             reward = recurrent_attack_reward(
                 accepted_response.scores,
                 selected_response.scores,
@@ -681,6 +577,7 @@ def collect_gradient_demonstrations(
                     transition.accepted,
                     trajectory_id=sample_id,
                     step_index=decision,
+                    action_distribution=action_distribution,
                 )
             )
             action_counts[selected_action] += 1.0
@@ -696,7 +593,7 @@ def collect_gradient_demonstrations(
                 break
         source_calls[family] += oracle.calls
     accepted_steps = sum(step.accepted for step in collected)
-    return tuple(collected), {
+    metrics: dict[str, object] = {
         "teacher": "source_privileged_cw_logit_gradient",
         "episodes": episodes,
         "decisions_per_episode": decisions,
@@ -712,3 +609,45 @@ def collect_gradient_demonstrations(
         "operator": AttackOperatorContract.from_config(config).as_dict(),
         "operator_digest": AttackOperatorContract.from_config(config).digest(),
     }
+    if soft_temperature is not None:
+        denominator = max(1, soft_target_count)
+        metrics.update(
+            {
+                "soft_temperature": float(soft_temperature),
+                "soft_target_cost_normalization": (
+                    "per_state_standard_deviation"
+                ),
+                "soft_target_metric_scope": (
+                    "accepted_behavior_clone_steps"
+                ),
+                "soft_target_generated_count": soft_target_generated_count,
+                "soft_target_count": soft_target_count,
+                "soft_target_mean_entropy": (
+                    soft_target_entropy_sum / denominator
+                ),
+                "soft_target_mean_expected_linearized_regret": (
+                    soft_target_expected_regret_sum / denominator
+                ),
+                "soft_target_mean_expected_normalized_regret": (
+                    soft_target_expected_normalized_regret_sum
+                    / denominator
+                ),
+                "soft_target_mean_top1_mass": (
+                    soft_target_top1_mass_sum / denominator
+                ),
+                "soft_target_mean_cost_scale": (
+                    soft_target_cost_scale_sum / denominator
+                ),
+                "soft_target_min_cost_scale": (
+                    soft_target_min_cost_scale
+                    if soft_target_count
+                    else 0.0
+                ),
+                "soft_target_max_cost_scale": (
+                    soft_target_max_cost_scale
+                    if soft_target_count
+                    else 0.0
+                ),
+            }
+        )
+    return tuple(collected), metrics

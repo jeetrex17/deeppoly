@@ -72,6 +72,10 @@ class MacPilotConfig:
     query_trace_samples_per_method: int = -1
     split_seed: int | None = None
     victim_seed: int | None = None
+    policy_actor_mode: str = "flat"
+    image_patch_feature_mode: str = "means"
+    behavior_cloning_soft_temperature: float | None = None
+    policy_evaluation_temperature: float = 1.0
 
     def __post_init__(self) -> None:
         counts = (
@@ -195,6 +199,47 @@ class MacPilotConfig:
                 raise ValueError(f"{label} must be a non-negative integer or null")
         if self.victim_profile not in {"pilot", "research"}:
             raise ValueError("victim_profile must be 'pilot' or 'research'")
+        if self.policy_actor_mode not in {"flat", "action_conditioned"}:
+            raise ValueError(
+                "policy_actor_mode must be 'flat' or 'action_conditioned'"
+            )
+        if self.image_patch_feature_mode not in {"means", "statistics"}:
+            raise ValueError(
+                "image_patch_feature_mode must be 'means' or 'statistics'"
+            )
+        if self.behavior_cloning_soft_temperature is not None and (
+            isinstance(self.behavior_cloning_soft_temperature, bool)
+            or not isinstance(
+                self.behavior_cloning_soft_temperature,
+                (int, float),
+            )
+            or not math.isfinite(
+                float(self.behavior_cloning_soft_temperature)
+            )
+            or self.behavior_cloning_soft_temperature <= 0
+        ):
+            raise ValueError(
+                "behavior_cloning_soft_temperature must be positive and finite"
+            )
+        if (
+            self.behavior_cloning_soft_temperature is not None
+            and self.behavior_cloning_teacher != "gradient"
+        ):
+            raise ValueError(
+                "soft behavior cloning requires the gradient teacher"
+            )
+        if (
+            isinstance(self.policy_evaluation_temperature, bool)
+            or not isinstance(
+                self.policy_evaluation_temperature,
+                (int, float),
+            )
+            or not math.isfinite(self.policy_evaluation_temperature)
+            or not 0.05 <= self.policy_evaluation_temperature <= 5.0
+        ):
+            raise ValueError(
+                "policy_evaluation_temperature must be in [0.05, 5.0]"
+            )
         self.attack_config()
 
     def _validate_behavior_cloning(self) -> None:
@@ -273,6 +318,7 @@ class MacPilotConfig:
             rollback_on_non_improvement=self.rollback_on_non_improvement,
             action_history_features=self.action_history_features,
             image_patch_features=self.image_patch_features,
+            image_patch_feature_mode=self.image_patch_feature_mode,
         )
 
     @classmethod

@@ -1,0 +1,14 @@
+{
+  "cuda_device_name": "NVIDIA GeForce RTX 2080 Ti",
+  "cuda_runtime": "13.0",
+  "cuda_total_memory_bytes": 11336482816,
+  "cudnn_version": 92000,
+  "determinism": "deterministic algorithms requested with warn_only",
+  "git_revision": "1525dc14c617ff7c715dd1bb62f48092d25ee941",
+  "nvidia_driver": "580.126.09",
+  "pip_freeze_sha256": "385c16a38cb84b34a84c284c5a2093cbbec3d70dcf067a2271f52eeaa46a0198",
+  "platform": "Linux-6.17.0-22-generic-x86_64-with-glibc2.39",
+  "python": "3.12.3",
+  "requirements_sha256": "e3e3730f92fa37cd3a7edc0b8f43af97d5444ebec8e04937a47f5e9df15db908",
+  "torch": "2.13.0+cu130"
+}
