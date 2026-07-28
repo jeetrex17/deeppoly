@@ -1,7 +1,7 @@
 # Phase 2 source-competence protocol
 
 **Protocol date:** 28 July 2026
-**Status:** Locked before the first Phase 2 GPU run
+**Status:** Locked before the first Phase 2 training episode
 **Scope:** Exploratory source-only screening, followed by a fresh-seed source replication only if the screen passes
 
 ## 1. Research objective
@@ -49,9 +49,11 @@ Phase 2 reuses the Phase 1 victim bank. Before a cell starts, the runner:
 3. rejects missing, extra, oversized, checksum-invalid, or contract-invalid cache artifacts;
 4. copies only allowlisted files atomically into a separate Phase 2 cache, without hardlinks;
 5. records only repository-relative cache and checkpoint identifiers in portable manifests;
-6. computes the exact cache fingerprint and selected source-victim IDs required by the Phase 2 cell;
+6. authenticates the Phase 1 cache fingerprint and verifies that the current dataset bytes, torchvision runtime, victim code, PyTorch version, victim-fitting contract, and all non-project dependency pins match;
 7. preflights the complete expected source-victim checkpoint set before loading any model; and
 8. refuses to run if any selected checkpoint is missing, incomplete, or checksum-invalid.
+
+The Phase 1 cache keeps its original environment identity. The current execution environment is recorded separately. The only permitted dependency-freeze difference is the editable project commit for the same repository and package. This permits the Phase 2 policy code to change without relabeling or retraining the frozen victims.
 
 The runner uses an enforced cache-only mode and has no victim-fitting fallback. Each leave-one-family-out cell constructs, loads, and validates only the two source families. The sealed held-out family has zero model-construction, checkpoint-loading, and validation calls. These counts are written into a fail-closed isolation audit.
 
@@ -231,3 +233,7 @@ The short screen is exploratory and uses one policy seed. Stage C uses only two 
 The fixed custom victim bank supports a narrow CIFAR-10 claim only. Soft gradient supervision uses privileged gradients on owned source victims during training, while deployment remains score-based and frozen. Better source competence is necessary but not sufficient for transfer to sealed target families.
 
 If Phase 2 or the final source gate fails, the correct conclusion is that the tested method did not establish transferable source competence under this threat model and compute budget.
+
+## 11. Preflight amendment log
+
+On 28 July 2026, an initial Stage B invocation stopped during cache preflight before any policy training, attack evaluation, or target call. The runner had recomputed the frozen victim-cache identity with the new editable project commit. The implementation was corrected before the first training episode to retain the authenticated Phase 1 cache identity while requiring identical dataset bytes, runtime versions, victim code, fitting contract, and non-project dependencies. No method, split, seed, threshold, or evaluation rule changed.

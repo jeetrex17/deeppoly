@@ -2,15 +2,23 @@ import hashlib
 import json
 import tempfile
 import unittest
+from dataclasses import replace
 from pathlib import Path
 from unittest import mock
 
 import torch
 
+from rl_transfer.cifar_config import MacPilotConfig
+from rl_transfer.cifar_victim_cache import (
+    victim_cache_contract,
+    victim_cache_digest,
+    victim_code_digest,
+)
 from rl_transfer.phase2_cache import (
     EXPECTED_VICTIM_FAMILIES,
     MAX_VICTIM_CHECKPOINT_BYTES,
     mirror_verified_victim_cache,
+    pinned_manifest_victim_cache_binding,
 )
 
 
@@ -106,6 +114,198 @@ class VerifiedVictimCacheTests(unittest.TestCase):
             expected_study_manifest_sha256=manifest_sha,
             expected_cache_fingerprint=fingerprint,
         )
+
+    def _write_manifest_with_contract(
+        self,
+        manifest: Path,
+        fingerprint: str,
+        contract: dict[str, object],
+        *,
+        freeze_sha256: str,
+    ) -> str:
+        manifest.write_text(
+            json.dumps(
+                {
+                    "schema_version": 1,
+                    "runtime_environment": {
+                        "pip_freeze_sha256": freeze_sha256,
+                    },
+                    "source_runs": [
+                        {
+                            "victim_cache_contract": contract,
+                            "victim_cache_digest": fingerprint,
+                        },
+                        {
+                            "victim_cache_contract": contract,
+                            "victim_cache_digest": fingerprint,
+                        },
+                    ],
+                },
+                sort_keys=True,
+            )
+        )
+        manifest_sha = hashlib.sha256(manifest.read_bytes()).hexdigest()
+        manifest.with_suffix(".json.sha256").write_text(
+            manifest_sha + "\n"
+        )
+        return manifest_sha
+
+    def _binding_fixture(
+        self,
+        root: Path,
+    ) -> tuple[
+        Path,
+        str,
+        Path,
+        str,
+        MacPilotConfig,
+        str,
+        str,
+    ]:
+        phase1_freeze = (
+            "numpy==2.4.1\n"
+            "torch==2.13.0\n"
+            "torchvision==0.28.0\n"
+            "-e git+https://github.com/example/research.git@"
+            + ("1" * 40)
+            + "#egg=rl_transfer_research\n"
+        )
+        current_freeze = phase1_freeze.replace("1" * 40, "2" * 40)
+        phase1_freeze_path = root / "pip_freeze.txt"
+        current_freeze_path = root / "phase2-pip-freeze.txt"
+        phase1_freeze_path.write_text(phase1_freeze)
+        current_freeze_path.write_text(current_freeze)
+        phase1_freeze_sha = hashlib.sha256(
+            phase1_freeze.encode()
+        ).hexdigest()
+        current_freeze_sha = hashlib.sha256(
+            current_freeze.encode()
+        ).hexdigest()
+        content_sha = "c" * 64
+        phase1_dataset_version = (
+            "torchvision-0.28.0;"
+            f"content-sha256={content_sha};"
+            f"environment-sha256={phase1_freeze_sha}"
+        )
+        current_dataset_version = (
+            "torchvision-0.28.0;"
+            f"content-sha256={content_sha};"
+            f"environment-sha256={current_freeze_sha}"
+        )
+        base = MacPilotConfig.from_json(
+            Path("configs/rl_transfer/cifar10_rtx_phase2_base.json")
+        )
+        fingerprint_config = replace(
+            base,
+            seed=17,
+            split_seed=20260727,
+            victim_seed=1000000,
+        )
+        split_digest = "d" * 64
+        contract = victim_cache_contract(
+            fingerprint_config,
+            split_digest,
+            phase1_dataset_version,
+            victim_code_digest(),
+            "cuda",
+        )
+        fingerprint = victim_cache_digest(
+            fingerprint_config,
+            split_digest,
+            phase1_dataset_version,
+            victim_code_digest(),
+            "cuda",
+        )
+        manifest = root / "study_manifest.json"
+        manifest_sha = self._write_manifest_with_contract(
+            manifest,
+            fingerprint,
+            contract,
+            freeze_sha256=phase1_freeze_sha,
+        )
+        return (
+            manifest,
+            manifest_sha,
+            current_freeze_path,
+            current_dataset_version,
+            fingerprint_config,
+            split_digest,
+            fingerprint,
+        )
+
+    def test_pinned_binding_allows_only_editable_code_commit_change(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (
+                manifest,
+                manifest_sha,
+                current_freeze,
+                current_dataset_version,
+                fingerprint_config,
+                split_digest,
+                fingerprint,
+            ) = self._binding_fixture(root)
+
+            binding = pinned_manifest_victim_cache_binding(
+                manifest,
+                expected_manifest_sha256=manifest_sha,
+                current_dataset_version=current_dataset_version,
+                current_freeze_path=current_freeze,
+                fingerprint_config=fingerprint_config,
+                expected_split_digest=split_digest,
+            )
+
+            self.assertEqual(binding.fingerprint, fingerprint)
+            self.assertNotEqual(
+                binding.dataset_version,
+                current_dataset_version,
+            )
+            self.assertEqual(
+                binding.dependency_compatibility,
+                "identical_non_project_pins",
+            )
+
+    def test_pinned_binding_rejects_dependency_or_split_drift(
+        self,
+    ) -> None:
+        for mutation in ("dependency", "split"):
+            with self.subTest(mutation=mutation), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                (
+                    manifest,
+                    manifest_sha,
+                    current_freeze,
+                    current_dataset_version,
+                    fingerprint_config,
+                    split_digest,
+                    _,
+                ) = self._binding_fixture(root)
+                if mutation == "dependency":
+                    changed = current_freeze.read_text().replace(
+                        "numpy==2.4.1",
+                        "numpy==9.9.9",
+                    )
+                    current_freeze.write_text(changed)
+                    current_dataset_version = current_dataset_version.rsplit(
+                        "=", 1
+                    )[0] + "=" + hashlib.sha256(changed.encode()).hexdigest()
+                else:
+                    split_digest = "e" * 64
+
+                with self.assertRaisesRegex(
+                    ValueError,
+                    "dependency|contract",
+                ):
+                    pinned_manifest_victim_cache_binding(
+                        manifest,
+                        expected_manifest_sha256=manifest_sha,
+                        current_dataset_version=current_dataset_version,
+                        current_freeze_path=current_freeze,
+                        fingerprint_config=fingerprint_config,
+                        expected_split_digest=split_digest,
+                    )
 
     def test_verified_cache_uses_independent_atomic_copies(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

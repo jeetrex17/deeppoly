@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import replace
+from dataclasses import dataclass, replace
 import hashlib
 import io
 import json
@@ -19,6 +19,7 @@ from .artifacts import sha256_file
 from .cifar_config import MacPilotConfig
 from .cifar_data import build_cifar_split
 from .cifar_victim_cache import (
+    victim_cache_contract as _victim_cache_contract,
     victim_cache_digest as _victim_cache_digest,
     victim_code_digest as _victim_code_digest,
 )
@@ -27,6 +28,7 @@ from .phase2_config import Phase2ScreenConfig
 
 MAX_STUDY_MANIFEST_BYTES = 64 * 1024 * 1024
 MAX_VICTIM_CHECKPOINT_BYTES = 64 * 1024 * 1024
+MAX_DEPENDENCY_FREEZE_BYTES = 2 * 1024 * 1024
 EXPECTED_VICTIM_FAMILIES = (
     "classical_cnn",
     "modern_cnn",
@@ -36,6 +38,26 @@ EXPECTED_INSTANCES_PER_FAMILY = 3
 EXPECTED_VICTIM_CHECKPOINTS = (
     len(EXPECTED_VICTIM_FAMILIES) * EXPECTED_INSTANCES_PER_FAMILY
 )
+_DATASET_VERSION_PATTERN = re.compile(
+    r"(?P<runtime>torchvision-[^;]+);"
+    r"content-sha256=(?P<content>[0-9a-f]{64});"
+    r"environment-sha256=(?P<environment>[0-9a-f]{64})"
+)
+_EDITABLE_PROJECT_PATTERN = re.compile(
+    r"-e git\+https://github\.com/"
+    r"(?P<repository>[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+)\.git@"
+    r"(?P<commit>[0-9a-f]{40})#egg="
+    r"(?P<package>[A-Za-z0-9_.-]+)"
+)
+
+
+@dataclass(frozen=True)
+class PinnedVictimCacheBinding:
+    """Authenticated Phase 1 cache identity compatible with this runtime."""
+
+    fingerprint: str
+    dataset_version: str
+    dependency_compatibility: str
 
 
 def _bounded_bytes(path: Path, maximum: int, *, label: str) -> bytes:
@@ -227,6 +249,225 @@ def _pinned_manifest_allowlist(
     if canonical is None:
         raise ValueError("pinned Phase 1 victim allowlist is empty")
     return canonical
+
+
+def _dataset_version_fields(
+    value: str,
+    *,
+    label: str,
+) -> tuple[str, str, str]:
+    match = (
+        _DATASET_VERSION_PATTERN.fullmatch(value)
+        if isinstance(value, str)
+        else None
+    )
+    if match is None:
+        raise ValueError(f"{label} has an invalid dataset version")
+    return (
+        match.group("runtime"),
+        match.group("content"),
+        match.group("environment"),
+    )
+
+
+def _dependency_freeze_signature(
+    path: Path,
+    *,
+    expected_sha256: str,
+    label: str,
+) -> tuple[tuple[str, str], tuple[str, ...]]:
+    payload = _bounded_bytes(
+        path,
+        MAX_DEPENDENCY_FREEZE_BYTES,
+        label=label,
+    )
+    if (
+        re.fullmatch(r"[0-9a-f]{64}", expected_sha256) is None
+        or hashlib.sha256(payload).hexdigest() != expected_sha256
+    ):
+        raise ValueError(f"{label} checksum failed")
+    try:
+        lines = payload.decode("utf-8").splitlines()
+    except UnicodeDecodeError as error:
+        raise ValueError(f"{label} is not UTF-8") from error
+    if not lines or any(not line for line in lines):
+        raise ValueError(f"{label} contains an invalid record")
+    editable = [
+        match
+        for line in lines
+        if (match := _EDITABLE_PROJECT_PATTERN.fullmatch(line))
+        is not None
+    ]
+    if len(editable) != 1:
+        raise ValueError(
+            f"{label} must contain one authenticated editable project"
+        )
+    project = editable[0]
+    package = project.group("package").casefold().replace("_", "-")
+    if package != "rl-transfer-research":
+        raise ValueError(f"{label} has the wrong editable project")
+    non_project = tuple(
+        line
+        for line in lines
+        if _EDITABLE_PROJECT_PATTERN.fullmatch(line) is None
+    )
+    if len(non_project) != len(set(non_project)):
+        raise ValueError(f"{label} contains duplicate dependency pins")
+    return (
+        (project.group("repository").casefold(), package),
+        non_project,
+    )
+
+
+def pinned_manifest_victim_cache_binding(
+    manifest_path: Path,
+    *,
+    expected_manifest_sha256: str,
+    current_dataset_version: str,
+    current_freeze_path: Path,
+    fingerprint_config: MacPilotConfig,
+    expected_split_digest: str,
+    expected_device_type: str = "cuda",
+) -> PinnedVictimCacheBinding:
+    """Return an authenticated, runtime-compatible Phase 1 cache binding.
+
+    The cache retains its Phase 1 environment identity. Reuse is allowed only
+    when the dataset bytes, torchvision runtime, every non-project dependency
+    pin, victim code, and full victim-fitting contract still match. The sole
+    permitted dependency-freeze difference is the editable project commit,
+    which must change in the same repository and package.
+    """
+
+    manifest_bytes = _bounded_bytes(
+        manifest_path,
+        MAX_STUDY_MANIFEST_BYTES,
+        label="pinned Phase 1 study manifest",
+    )
+    sidecar = manifest_path.with_suffix(
+        manifest_path.suffix + ".sha256"
+    )
+    if (
+        re.fullmatch(r"[0-9a-f]{64}", expected_manifest_sha256)
+        is None
+        or re.fullmatch(r"[0-9a-f]{64}", expected_split_digest)
+        is None
+        or not isinstance(fingerprint_config, MacPilotConfig)
+        or expected_device_type != "cuda"
+        or
+        _sidecar_value(
+            sidecar,
+            label="pinned Phase 1 manifest checksum",
+        )
+        != expected_manifest_sha256
+        or hashlib.sha256(manifest_bytes).hexdigest()
+        != expected_manifest_sha256
+    ):
+        raise ValueError("pinned Phase 1 manifest checksum failed")
+    payload = json.loads(manifest_bytes)
+    runs = payload.get("source_runs") if isinstance(payload, Mapping) else None
+    if (
+        not isinstance(runs, list)
+        or not 1 <= len(runs) <= 100
+        or any(not isinstance(run, Mapping) for run in runs)
+    ):
+        raise ValueError("pinned Phase 1 source-run records are invalid")
+    runtime = payload.get("runtime_environment")
+    if not isinstance(runtime, Mapping):
+        raise ValueError(
+            "pinned Phase 1 runtime environment is unavailable"
+        )
+    phase1_freeze_sha = runtime.get("pip_freeze_sha256")
+    if not isinstance(phase1_freeze_sha, str):
+        raise ValueError(
+            "pinned Phase 1 dependency checksum is unavailable"
+        )
+    canonical_contract: dict[str, object] | None = None
+    canonical_digest: str | None = None
+    for run in runs:
+        contract = run.get("victim_cache_contract")
+        cache_digest = run.get("victim_cache_digest")
+        if (
+            not isinstance(contract, Mapping)
+            or not isinstance(cache_digest, str)
+            or re.fullmatch(r"[0-9a-f]{64}", cache_digest) is None
+        ):
+            raise ValueError(
+                "pinned Phase 1 victim-cache contract is incompatible"
+            )
+        current_contract = dict(contract)
+        if canonical_contract is None:
+            canonical_contract = current_contract
+            canonical_digest = cache_digest
+        elif (
+            current_contract != canonical_contract
+            or cache_digest != canonical_digest
+        ):
+            raise ValueError(
+                "pinned Phase 1 runs disagree on victim cache"
+            )
+    if canonical_contract is None or canonical_digest is None:
+        raise ValueError("pinned Phase 1 victim cache is unavailable")
+    phase1_dataset_version = canonical_contract.get("dataset_version")
+    if not isinstance(phase1_dataset_version, str):
+        raise ValueError(
+            "pinned Phase 1 victim-cache contract is incompatible"
+        )
+    (
+        phase1_runtime,
+        phase1_content,
+        phase1_environment,
+    ) = _dataset_version_fields(
+        phase1_dataset_version,
+        label="pinned Phase 1",
+    )
+    current_runtime, current_content, current_environment = (
+        _dataset_version_fields(
+            current_dataset_version,
+            label="current Phase 2",
+        )
+    )
+    if (
+        phase1_runtime != current_runtime
+        or phase1_content != current_content
+        or phase1_environment != phase1_freeze_sha
+    ):
+        raise ValueError(
+            "pinned Phase 1 dataset contract is incompatible"
+        )
+    phase1_signature = _dependency_freeze_signature(
+        manifest_path.parent / "pip_freeze.txt",
+        expected_sha256=phase1_environment,
+        label="pinned Phase 1 dependency freeze",
+    )
+    current_signature = _dependency_freeze_signature(
+        current_freeze_path,
+        expected_sha256=current_environment,
+        label="current Phase 2 dependency freeze",
+    )
+    if phase1_signature != current_signature:
+        raise ValueError(
+            "Phase 1 and Phase 2 non-project dependency pins differ"
+        )
+    expected_contract = _victim_cache_contract(
+        fingerprint_config,
+        expected_split_digest,
+        phase1_dataset_version,
+        _victim_code_digest(),
+        expected_device_type,
+    )
+    if (
+        canonical_contract != expected_contract
+        or _contract_fingerprint(canonical_contract)
+        != canonical_digest
+    ):
+        raise ValueError(
+            "pinned Phase 1 victim-cache contract is incompatible"
+        )
+    return PinnedVictimCacheBinding(
+        fingerprint=canonical_digest,
+        dataset_version=phase1_dataset_version,
+        dependency_compatibility="identical_non_project_pins",
+    )
 
 
 def _materialize_verified_file(

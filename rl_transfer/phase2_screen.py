@@ -16,6 +16,7 @@ from torch.utils.data import Dataset
 
 from .artifacts import sha256_file
 from .cifar_config import MacPilotConfig
+from .cifar_data import build_cifar_split
 from .cifar_pilot import (
     _code_digest,
     run_cifar_pilot_from_datasets,
@@ -26,8 +27,8 @@ from .gpu_environment import (
 )
 from .paths import resolve_descendant, resolve_within_repository
 from .phase2_cache import (
-    expected_victim_cache_fingerprint,
     mirror_verified_victim_cache,
+    pinned_manifest_victim_cache_binding,
 )
 from .phase2_config import Phase2ScreenConfig
 from .phase2_promotion import screen_promotion_decision
@@ -429,18 +430,44 @@ def _checked_cache_reuse(
         "victim_cache",
         label="Phase 2 victim cache",
     )
-    expected = expected_victim_cache_fingerprint(
-        config,
-        base,
-        train_dataset,
-        test_dataset,
-        dataset_version=dataset_version,
-    )
     study_manifest = resolve_within_repository(
         config.victim_study_manifest,
         allowed_directory="output/rl_transfer",
         label="pinned Phase 1 study manifest",
     )
+    targets = getattr(train_dataset, "targets", None)
+    test_targets = getattr(test_dataset, "targets", None)
+    if not isinstance(targets, Sequence) or not isinstance(
+        test_targets,
+        Sequence,
+    ):
+        raise ValueError(
+            "CIFAR train and test targets are required for cache preflight"
+        )
+    split = build_cifar_split(
+        targets,
+        test_targets,
+        base.victim_train_images,
+        base.policy_train_images,
+        base.source_validation_images,
+        base.outer_test_images,
+        config.split_seed,
+    )
+    fingerprint_config = replace(
+        base,
+        seed=config.seeds[0],
+        split_seed=config.split_seed,
+        victim_seed=config.victim_seed,
+    )
+    binding = pinned_manifest_victim_cache_binding(
+        study_manifest,
+        expected_manifest_sha256=config.victim_study_manifest_sha256,
+        current_dataset_version=dataset_version,
+        current_freeze_path=run_output_dir.parent / "pip_freeze.txt",
+        fingerprint_config=fingerprint_config,
+        expected_split_digest=split.digest,
+    )
+    expected = binding.fingerprint
     mirrored = mirror_verified_victim_cache(
         cache_source,
         cache_destination,
@@ -463,6 +490,8 @@ def _checked_cache_reuse(
         **mirrored,
         "expected_fingerprint": expected,
         "exact_fingerprint_available": True,
+        "phase1_dataset_version": binding.dataset_version,
+        "dependency_compatibility": binding.dependency_compatibility,
     }
 
 
@@ -608,6 +637,9 @@ def run_phase2_screen_from_datasets(
                     evaluate_target=False,
                     source_victims_only=True,
                     victim_cache_only=True,
+                    victim_cache_dataset_version=str(
+                        cache_reuse["phase1_dataset_version"]
+                    ),
                     portable_paths=True,
                 )
                 validate_source_run_artifacts(

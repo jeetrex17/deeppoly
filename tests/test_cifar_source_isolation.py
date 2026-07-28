@@ -81,6 +81,54 @@ def _checkpoint(cache_dir: Path, victim_id: str) -> None:
 
 
 class StrictSourceIsolationTests(unittest.TestCase):
+    def test_frozen_cache_dataset_version_is_cache_only_and_explicit(
+        self,
+    ) -> None:
+        train = BalancedDataset(20)
+        test = BalancedDataset(5)
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory)
+            config = _config(output)
+            with self.assertRaisesRegex(ValueError, "cache-only"):
+                run_cifar_pilot_from_datasets(
+                    config,
+                    train,
+                    test,
+                    evaluate_target=False,
+                    victim_cache_dataset_version="phase1-frozen",
+                )
+
+            with (
+                mock.patch(
+                    "rl_transfer.cifar_pilot._victim_cache_digest",
+                    return_value="a" * 64,
+                ) as digest,
+                mock.patch(
+                    "rl_transfer.cifar_pilot._victim_cache_contract",
+                    return_value={},
+                ) as contract,
+                mock.patch(
+                    "rl_transfer.cifar_pilot.build_cifar_victim_population",
+                    side_effect=RuntimeError("stop-after-contract"),
+                ),
+                self.assertRaisesRegex(
+                    RuntimeError,
+                    "stop-after-contract",
+                ),
+            ):
+                run_cifar_pilot_from_datasets(
+                    config,
+                    train,
+                    test,
+                    evaluate_target=False,
+                    source_victims_only=True,
+                    victim_cache_only=True,
+                    victim_cache_dataset_version="phase1-frozen",
+                )
+
+        self.assertEqual(contract.call_args.args[2], "phase1-frozen")
+        self.assertEqual(digest.call_args.args[2], "phase1-frozen")
+
     def test_incomplete_matching_cache_fails_before_any_fit_or_load(self) -> None:
         train = BalancedDataset(20)
         test = BalancedDataset(5)

@@ -5,9 +5,11 @@ import tempfile
 import unittest
 from dataclasses import asdict, replace
 from pathlib import Path
+from types import SimpleNamespace
 from unittest import mock
 
 from rl_transfer.cifar_config import MacPilotConfig
+from rl_transfer.phase2_cache import PinnedVictimCacheBinding
 from rl_transfer.phase2_config import FAMILIES, Phase2ScreenConfig
 from rl_transfer.phase2_screen import (
     build_phase2_dry_run,
@@ -18,6 +20,14 @@ from rl_transfer.verified_artifacts import write_verified_json
 
 
 CONFIG_PATH = Path("configs/rl_transfer/cifar10_rtx_phase2_screen.json")
+
+
+def _cache_binding(fingerprint: str) -> PinnedVictimCacheBinding:
+    return PinnedVictimCacheBinding(
+        fingerprint=fingerprint,
+        dataset_version="phase1-fixture",
+        dependency_compatibility="identical_non_project_pins",
+    )
 
 
 def _config_payload(**overrides: object) -> dict[str, object]:
@@ -488,8 +498,12 @@ class Phase2RunnerTests(unittest.TestCase):
                     },
                 ),
                 mock.patch(
-                    "rl_transfer.phase2_screen.expected_victim_cache_fingerprint",
-                    return_value="b" * 64,
+                    "rl_transfer.phase2_screen.pinned_manifest_victim_cache_binding",
+                    return_value=_cache_binding("b" * 64),
+                ),
+                mock.patch(
+                    "rl_transfer.phase2_screen.build_cifar_split",
+                    return_value=SimpleNamespace(digest="d" * 64),
                 ),
                 mock.patch(
                     "rl_transfer.phase2_screen.run_cifar_pilot_from_datasets",
@@ -501,8 +515,8 @@ class Phase2RunnerTests(unittest.TestCase):
             ):
                 run_phase2_screen_from_datasets(
                     config,
-                    object(),
-                    object(),
+                    mock.Mock(targets=[]),
+                    mock.Mock(targets=[]),
                     dataset_version="fixture-v1",
                 )
         pilot.assert_not_called()
@@ -518,6 +532,10 @@ class Phase2RunnerTests(unittest.TestCase):
             self.assertIs(kwargs["evaluate_target"], False)
             self.assertIs(kwargs["source_victims_only"], True)
             self.assertIs(kwargs["victim_cache_only"], True)
+            self.assertEqual(
+                kwargs["victim_cache_dataset_version"],
+                "phase1-fixture",
+            )
             self.assertIs(kwargs["portable_paths"], True)
             return produced[(derived.target_family, derived.seed)]
 
@@ -543,8 +561,12 @@ class Phase2RunnerTests(unittest.TestCase):
                     },
                 ),
                 mock.patch(
-                    "rl_transfer.phase2_screen.expected_victim_cache_fingerprint",
-                    return_value="f" * 64,
+                    "rl_transfer.phase2_screen.pinned_manifest_victim_cache_binding",
+                    return_value=_cache_binding("f" * 64),
+                ),
+                mock.patch(
+                    "rl_transfer.phase2_screen.build_cifar_split",
+                    return_value=SimpleNamespace(digest="d" * 64),
                 ),
                 mock.patch(
                     "rl_transfer.phase2_screen.run_cifar_pilot_from_datasets",
@@ -556,8 +578,8 @@ class Phase2RunnerTests(unittest.TestCase):
             ):
                 result = run_phase2_screen_from_datasets(
                     config,
-                    object(),
-                    object(),
+                    mock.Mock(targets=[]),
+                    mock.Mock(targets=[]),
                     dataset_version="fixture-v1",
                 )
 
@@ -603,8 +625,12 @@ class Phase2RunnerTests(unittest.TestCase):
                     },
                 ),
                 mock.patch(
-                    "rl_transfer.phase2_screen.expected_victim_cache_fingerprint",
-                    return_value="f" * 64,
+                    "rl_transfer.phase2_screen.pinned_manifest_victim_cache_binding",
+                    return_value=_cache_binding("f" * 64),
+                ),
+                mock.patch(
+                    "rl_transfer.phase2_screen.build_cifar_split",
+                    return_value=SimpleNamespace(digest="d" * 64),
                 ),
                 mock.patch(
                     "rl_transfer.phase2_screen.run_cifar_pilot_from_datasets",
@@ -622,8 +648,8 @@ class Phase2RunnerTests(unittest.TestCase):
             ):
                 result = run_phase2_screen_from_datasets(
                     config,
-                    object(),
-                    object(),
+                    mock.Mock(targets=[]),
+                    mock.Mock(targets=[]),
                     dataset_version="fixture-v1",
                     clock=lambda: next(clocks),
                 )

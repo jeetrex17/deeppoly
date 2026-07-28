@@ -72,6 +72,7 @@ def run_cifar_pilot_from_datasets(
     evaluate_target: bool = True,
     source_victims_only: bool = False,
     victim_cache_only: bool = False,
+    victim_cache_dataset_version: str | None = None,
     portable_paths: bool = False,
 ) -> dict[str, object]:
     for label, value in (
@@ -88,6 +89,25 @@ def run_cifar_pilot_from_datasets(
         )
     if victim_cache_only and not resume:
         raise ValueError("victim_cache_only requires resume=True")
+    if victim_cache_dataset_version is not None and (
+        not isinstance(victim_cache_dataset_version, str)
+        or not victim_cache_dataset_version
+    ):
+        raise TypeError(
+            "victim_cache_dataset_version must be a non-empty string"
+        )
+    if (
+        victim_cache_dataset_version is not None
+        and not victim_cache_only
+    ):
+        raise ValueError(
+            "victim_cache_dataset_version is cache-only metadata"
+        )
+    cache_dataset_version = (
+        victim_cache_dataset_version
+        if victim_cache_dataset_version is not None
+        else dataset_version
+    )
     report = progress or (lambda _message: None)
     started = time.monotonic()
     seed_everything(config.seed)
@@ -148,14 +168,14 @@ def run_cifar_pilot_from_datasets(
     victim_cache_contract = _victim_cache_contract(
         config,
         split.digest,
-        dataset_version,
+        cache_dataset_version,
         victim_code_digest,
         device.type,
     )
     victim_cache_digest = _victim_cache_digest(
         config,
         split.digest,
-        dataset_version,
+        cache_dataset_version,
         victim_code_digest,
         device.type,
     )
@@ -252,6 +272,7 @@ def run_cifar_pilot_from_datasets(
         },
         "victim_cache_digest": victim_cache_digest,
         "victim_cache_contract": victim_cache_contract,
+        "victim_cache_dataset_version": cache_dataset_version,
         "victim_code_digest": victim_code_digest,
     }
     _write_json(manifest_path, manifest)
