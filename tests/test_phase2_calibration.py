@@ -591,6 +591,60 @@ class Phase2CalibrationReplayTests(unittest.TestCase):
                     metrics,
                 )
 
+    def test_temperature_one_reproduction_accepts_json_equivalent_budget_keys(
+        self,
+    ) -> None:
+        from rl_transfer.phase2_calibration_evaluation import (
+            verify_temperature_one_reproduction,
+        )
+
+        replayed = {
+            "eligible": 25,
+            "successes": 3,
+            "asr_at_budgets": {
+                0: 0.0,
+                1: 0.0,
+                2: 0.04,
+                10: 0.12,
+            },
+            "asr_query_auc": 0.05,
+            "eligible_sample_ids_sha256": "a" * 64,
+            "action_histogram": {"0": 10, "1": 15},
+            "by_victim": {
+                "victim-1": {
+                    "eligible": 25,
+                    "successes": 3,
+                    "asr_at_budgets": {
+                        0: 0.0,
+                        1: 0.0,
+                        2: 0.04,
+                        10: 0.12,
+                    },
+                    "asr_query_auc": 0.05,
+                    "eligible_sample_ids_sha256": "b" * 64,
+                }
+            },
+        }
+        archived = json.loads(json.dumps(replayed, sort_keys=True))
+
+        verify_temperature_one_reproduction(replayed, archived)
+
+    def test_temperature_one_reproduction_rejects_json_key_collisions(
+        self,
+    ) -> None:
+        from rl_transfer.phase2_calibration_evaluation import (
+            verify_temperature_one_reproduction,
+        )
+
+        ambiguous = {
+            "eligible": 1,
+            "successes": 0,
+            "asr_at_budgets": {1: 0.0, "1": 1.0},
+        }
+
+        with self.assertRaisesRegex(ValueError, "collision"):
+            verify_temperature_one_reproduction(ambiguous, ambiguous)
+
     def test_temperature_method_names_are_stable(self) -> None:
         from rl_transfer.phase2_calibration_evaluation import (
             temperature_method,

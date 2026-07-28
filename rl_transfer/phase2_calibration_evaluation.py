@@ -56,9 +56,29 @@ def temperature_method(temperature: float) -> str:
     return f"temperature_{temperature:.2f}".replace(".", "p")
 
 
+def _json_key(key: object) -> str:
+    if isinstance(key, bool) or not isinstance(key, (str, int)):
+        raise ValueError("canonical JSON mapping keys must be strings or integers")
+    return str(key)
+
+
+def _json_value(value: object) -> object:
+    if isinstance(value, Mapping):
+        pairs = tuple(
+            (_json_key(key), _json_value(item)) for key, item in value.items()
+        )
+        keys = tuple(key for key, _ in pairs)
+        if len(keys) != len(set(keys)):
+            raise ValueError("canonical JSON mapping key collision")
+        return dict(pairs)
+    if isinstance(value, (list, tuple)):
+        return [_json_value(item) for item in value]
+    return value
+
+
 def _canonical(value: object) -> str:
     return json.dumps(
-        value,
+        _json_value(value),
         sort_keys=True,
         separators=(",", ":"),
         allow_nan=False,
