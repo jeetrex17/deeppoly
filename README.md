@@ -7,7 +7,46 @@ Research code for two related robustness directions:
 
 The transferability work asks a specific question: can an RL attack policy learn reusable attack behavior from multiple source architectures, then transfer to an unseen target architecture under a fixed query budget?
 
-> Current status: the corrected M4/CIFAR-10 study completed all **9 family/seed folds**. Every victim-quality gate passed, but the RL promotion gate failed: stochastic PPO was near-random and did not establish a statistically and practically validated advantage over the controls. This is a useful negative exploratory result, not a paper-ready superiority claim.
+> Current status: the RTX Phase 1 source study completed all **30 family/seed cells**. Victim quality and artifact audits passed, but the locked source-competence gate failed. The shared victim bank was fit and clean-validated, but the held-out attack cohorts remained unopened and the recorded held-out attack-call count is zero. Phase 2 now uses a short, source-only screen that stops weak candidates before another long run.
+
+## RTX Phase 1 result and Phase 2
+
+Phase 1 used three leave-one-family-out folds, ten policy seeds, a fixed verified victim bank, behavior cloning from a privileged source-gradient teacher, GroupDRO PPO, component ablations, and matched black-box controls. The full source phase took 16.26 hours.
+
+| Source-side method | ASR at 50 calls | ASR/query AUC |
+| --- | ---: | ---: |
+| Hybrid BC + GroupDRO + PPO | 7.05% | 3.25% |
+| BC only | 6.86% | 3.10% |
+| PPO only | 5.69% | 2.55% |
+| Score greedy | 5.61% | 2.47% |
+| Random action | 5.60% | 2.46% |
+
+The hybrid policy improved over score greedy by 1.45 percentage points in ASR and 0.78 points in AUC, but the preregistered gate required gains of 5 and 2 points in every source condition. Behavior-cloning validation accuracy was 2.84%, below the 2.95% majority baseline. PPO added only 0.20 ASR points over BC alone, and the 5,000-episode training curve did not improve after its early portion. The evidence therefore points to a representation and teacher-objective problem, not a shortage of PPO episodes.
+
+The checksum-backed evidence bundle contains all 30 run summaries, every source condition, raw numerical result rows and query traces in compressed form, figures, training diagnostics, and input artifact hashes:
+
+- [RTX Phase 1 evidence and interpretation](docs/research/cifar10_rtx_phase1/README.md)
+- [Phase 2 preregistered source protocol](docs/research/cifar10_rtx_phase2_protocol.md)
+
+Phase 2 tests a richer patch-statistics observation, normalized soft gradient distillation, and a shared action-conditioned actor. Stage A is a bounded diagnostic of the old frozen Phase 1 checkpoint; it does not tune the new actor. The trainable Stage B screen uses one development seed across all three folds, 600 BC episodes and 600 PPO episodes per cell, with authenticated Phase 1 source victims reused and a 60-minute scheduling threshold. Neither command has a target-evaluation mode.
+
+```bash
+uv run python -m rl_transfer.phase2_temperature_cli \
+  --phase1-manifest output/rl_transfer/cifar10_rtx_publication/cifar10-rtx-publication/study_manifest.json \
+  --phase1-root output/rl_transfer/cifar10_rtx_publication/cifar10-rtx-publication \
+  --output-dir output/rl_transfer/cifar10_rtx_phase2_stage_a \
+  --data-root data/cifar10 \
+  --deadline-seconds 600
+
+uv run python -m rl_transfer.phase2_screen_cli \
+  --config configs/rl_transfer/cifar10_rtx_phase2_screen.json \
+  --dry-run
+
+uv run python -m rl_transfer.phase2_screen_cli \
+  --config configs/rl_transfer/cifar10_rtx_phase2_screen.json
+```
+
+A positive screen authorizes only a larger source-only replication. It does not authorize a target claim. Target evaluation remains sealed until the final source gate passes.
 
 ## M4 CIFAR-10 pilot results
 

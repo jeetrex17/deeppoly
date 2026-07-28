@@ -1,0 +1,165 @@
+{
+  "schema_version": 1,
+  "contract_name": "cifar10-rtx-phase2-confirmatory-contract",
+  "status": "locked_before_stage_b_results",
+  "lock_date": "2026-07-28",
+  "dataset": {
+    "name": "CIFAR-10",
+    "train_images": 50000,
+    "class_count": 10,
+    "split_algorithm": "rl-transfer-cifar-stratified-v1",
+    "split_seed": 20260727,
+    "victim_fit_images": 40000,
+    "policy_train_images": 4000,
+    "source_validation_images": 1000,
+    "outer_test_images": 1000,
+    "untouched_complement_images": 5000,
+    "base_split_digest": "d7f9ca06d42857e4471c09429a08ed456ecd49d6651482fbb4f46853f65ac8ac",
+    "role_digests": {
+      "victim_fit": "a3d3d66f13420593b9f13add68089b3b2c6e565fb348650706ac61cbc66e7212",
+      "policy_train": "e2ad97e9c27ad5ef6d96db022790bce42b9b36343979c69875558a8768e347e8",
+      "source_validation": "4163838dc6fc2621d8a3e931bccc5f8f36f9a6f92b0717bbbfa67c9359af3beb",
+      "outer_test": "fcbb33279380b454e43211a494c34f7e719a74d69ef2d9088424c470f720461a"
+    }
+  },
+  "seeds": {
+    "phase1": [
+      17,
+      29,
+      41,
+      53,
+      67,
+      79,
+      97,
+      113,
+      131,
+      149
+    ],
+    "stage_b": [
+      17
+    ],
+    "stage_c": [
+      151,
+      157
+    ],
+    "final_confirmatory": [
+      163,
+      167,
+      173,
+      179,
+      181,
+      191,
+      193,
+      197,
+      199,
+      211
+    ],
+    "derivation": {
+      "stage_c": "first-two-primes-strictly-above-maximum-phase1-seed",
+      "final_confirmatory": "next-ten-primes-strictly-above-maximum-stage-c-seed"
+    }
+  },
+  "final_source_test": {
+    "role": "untouched-final-confirmatory-source-test",
+    "algorithm": "balanced-complement-shuffle-v1",
+    "algorithm_version": 1,
+    "split_seed": 20260727,
+    "selection_seed": 20260727,
+    "candidate_images": 5000,
+    "candidate_images_per_class": 500,
+    "selected_images": 1000,
+    "selected_images_per_class": 100,
+    "candidate_indices_digest": "ad7d4d2fb06251fca1a77198bfc9da5411e20e54930f19fabd6794d6cdfa27be",
+    "selected_indices_digest": "0a1329758e414723e597c878f417873312db74165a6d59aa467e966b5873810a",
+    "allowed_stage": "final_confirmatory_source",
+    "prohibited_stages": [
+      "stage_a",
+      "stage_b",
+      "stage_c_first_rung",
+      "stage_c_extended_rung",
+      "stage_c_promotion"
+    ],
+    "evaluation_access_count_before_allowed_stage": 0,
+    "indices_preregistered_before_stage_b": true
+  },
+  "rules": {
+    "stage_c": {
+      "entry_condition": "stage_b_gate_passed",
+      "freeze_before_start": [
+        "observation_representation",
+        "teacher_objective",
+        "actor_architecture",
+        "evaluation_temperature",
+        "reward",
+        "optimizer"
+      ],
+      "first_rung": {
+        "initial_ppo_episodes": 600,
+        "maximum_ppo_episodes": 1200,
+        "require_positive_mean_asr_gain_in_every_fold": true,
+        "require_positive_mean_auc_gain_in_every_fold": true,
+        "minimum_macro_asr_gain": 0.025,
+        "minimum_macro_auc_gain": 0.01,
+        "require_soft_bc_representation_gate": true,
+        "minimum_soft_top5_gain_over_validation_oracle": 0.01,
+        "minimum_soft_cross_entropy_improvement_over_validation_oracle": 0.02,
+        "require_no_regression_over_tail": true,
+        "no_regression_tail_episodes": 200,
+        "no_regression_comparison": "mean-reward-last-200-greater-than-or-equal-to-previous-200",
+        "stop_before_extended_rung_on_failure": true
+      },
+      "promotion": {
+        "method_and_episode_count_frozen_before_access": true,
+        "source_images": 200,
+        "evaluate_once": true,
+        "require_positive_asr_gain_in_every_fold": true,
+        "require_positive_auc_gain_in_every_fold": true,
+        "minimum_macro_asr_gain": 0.04,
+        "minimum_macro_auc_gain": 0.015,
+        "normalized_action_entropy_minimum": 0.1,
+        "normalized_action_entropy_maximum": 0.95,
+        "require_unchanged_policy_digests": true,
+        "require_complete_matched_cohorts": true,
+        "required_target_calls": 0,
+        "method_revision_after_observation": false,
+        "stop_before_final_study_on_failure": true
+      }
+    },
+    "final_confirmatory_source": {
+      "entry_condition": "stage_c_promotion_passed",
+      "restore_ablations": [
+        "bc_only",
+        "ppo_only"
+      ],
+      "primary_control": "score_greedy",
+      "matched_controls": [
+        "random_action",
+        "bandit_action",
+        "score_greedy"
+      ],
+      "source_slices": [
+        "exact_source",
+        "seen_family_new_instance"
+      ],
+      "final_source_test_images": 1000,
+      "episode_count_capped_at_pre_promotion_choice": true,
+      "minimum_macro_asr_gain": 0.05,
+      "minimum_macro_auc_gain": 0.02,
+      "require_effects_positive_in_every_fold_and_source_slice": true,
+      "require_policy_seed_bootstrap_lower_bounds_above_zero": true,
+      "maximum_exact_sign_flip_pvalue": 0.05,
+      "minimum_hybrid_ablation_asr_gain": 0.01,
+      "require_hybrid_above_each_component_ablation": true,
+      "require_soft_bc_representation_gate": true,
+      "require_complete_artifact_audit": true,
+      "require_complete_cohort_audit": true,
+      "require_complete_query_audit": true,
+      "require_complete_perturbation_audit": true,
+      "required_target_calls": 0,
+      "run_once": true,
+      "replace_failed_seeds": false,
+      "settings_change_after_observation": false,
+      "only_passing_gate_can_unlock_target_evaluation": true
+    }
+  }
+}

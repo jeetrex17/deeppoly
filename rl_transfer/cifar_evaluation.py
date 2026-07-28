@@ -114,6 +114,11 @@ def _method_summary(
         "operator": operator.as_dict(),
         "operator_digest": operator.digest(),
         "deterministic_actions": deterministic,
+        "sampling_temperature": (
+            float(getattr(attack_policy, "temperature", 1.0))
+            if isinstance(attack_policy, RecurrentAttackPolicy)
+            else None
+        ),
         "action_histogram": {
             str(action): count
             for action, count in sorted(action_counts.items())

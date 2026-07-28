@@ -450,6 +450,29 @@ class BehaviorCloningTests(unittest.TestCase):
 
 
 class SourceCompetenceGateTests(unittest.TestCase):
+    def test_gate_accepts_soft_action_conditioned_method_identity(
+        self,
+    ) -> None:
+        soft_method = (
+            "soft_gradient_bc_action_conditioned_groupdro_ppo_stochastic"
+        )
+        evaluation = {
+            "exact_source": _source_slice(),
+            "seen_family_new_instance": _source_slice(0.22),
+        }
+        for source_slice in evaluation.values():
+            for methods in source_slice.values():
+                methods[soft_method] = methods.pop(
+                    "groupdro_recurrent_ppo_stochastic"
+                )
+
+        gate = summarize_source_competence(evaluation)
+
+        self.assertTrue(gate["passed"])
+        for source_slice in gate["slices"].values():
+            for family in source_slice["families"].values():
+                self.assertEqual(family["learned_method"], soft_method)
+
     def test_gate_requires_exact_and_unseen_source_instance_slices(self) -> None:
         evaluation = {
             "exact_source": _source_slice(),

@@ -11,6 +11,14 @@ from .research_metrics import asr_query_auc
 
 LEARNED_METHOD = "groupdro_recurrent_ppo_stochastic"
 HYBRID_LEARNED_METHOD = "gradient_bc_groupdro_ppo_stochastic"
+SOFT_ACTION_CONDITIONED_LEARNED_METHOD = (
+    "soft_gradient_bc_action_conditioned_groupdro_ppo_stochastic"
+)
+LEARNED_METHODS = (
+    SOFT_ACTION_CONDITIONED_LEARNED_METHOD,
+    HYBRID_LEARNED_METHOD,
+    LEARNED_METHOD,
+)
 MATCHED_CONTROLS = ("random_action", "bandit_action", "score_greedy")
 REQUIRED_SLICES = ("exact_source", "seen_family_new_instance")
 
@@ -67,10 +75,13 @@ def _validate_family(
     methods: Mapping[str, object],
     thresholds: SourceGateThresholds,
 ) -> dict[str, object]:
-    learned_method = (
-        HYBRID_LEARNED_METHOD
-        if HYBRID_LEARNED_METHOD in methods
-        else LEARNED_METHOD
+    learned_method = next(
+        (
+            candidate
+            for candidate in LEARNED_METHODS
+            if candidate in methods
+        ),
+        LEARNED_METHOD,
     )
     required = {learned_method, *MATCHED_CONTROLS}
     if not required.issubset(methods):

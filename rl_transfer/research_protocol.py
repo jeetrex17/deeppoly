@@ -12,7 +12,7 @@ from torch import nn
 from .audit import AuditedVictim
 from .actions import apply_action, patch_catalog
 from .config import AttackConfig
-from .features import patch_image_features
+from .features import configured_patch_image_features
 from .population import FamilyRobustWeights, balanced_family_schedule
 from .operator import choose_attack_transition
 from .recurrent import PPOSequence, RecurrentAttackPolicy
@@ -175,14 +175,10 @@ def run_frozen_episode(
             oracle.calls / config.max_queries,
             action_counts if config.action_history_features else None,
             action_values if config.action_history_features else None,
-            (
-                patch_image_features(
-                    original,
-                    adversarial,
-                    grid_size=config.grid_size,
-                )
-                if config.image_patch_features
-                else None
+            configured_patch_image_features(
+                original,
+                adversarial,
+                config,
             ),
         )
         if isinstance(policy, RecurrentAttackPolicy):
@@ -489,14 +485,10 @@ def train_population_policy(
                 oracle.calls / config.max_queries,
                 action_counts if config.action_history_features else None,
                 action_values if config.action_history_features else None,
-                (
-                    patch_image_features(
-                        original,
-                        adversarial,
-                        grid_size=config.grid_size,
-                    )
-                    if config.image_patch_features
-                    else None
+                configured_patch_image_features(
+                    original,
+                    adversarial,
+                    config,
                 ),
             )
             observation_tensor = torch.as_tensor(observation, device=device)

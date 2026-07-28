@@ -20,6 +20,14 @@ from .research_metrics import asr_query_auc
 FAMILIES = ("classical_cnn", "modern_cnn", "transformer")
 LEARNED_METHOD = "groupdro_recurrent_ppo_stochastic"
 HYBRID_LEARNED_METHOD = "gradient_bc_groupdro_ppo_stochastic"
+SOFT_ACTION_CONDITIONED_LEARNED_METHOD = (
+    "soft_gradient_bc_action_conditioned_groupdro_ppo_stochastic"
+)
+LEARNED_METHODS = (
+    SOFT_ACTION_CONDITIONED_LEARNED_METHOD,
+    HYBRID_LEARNED_METHOD,
+    LEARNED_METHOD,
+)
 CONTROL_METHODS = ("random_action", "bandit_action", "score_greedy")
 REQUIRED_METHODS = (LEARNED_METHOD, *CONTROL_METHODS)
 
@@ -213,10 +221,13 @@ def summarize_study(
         if not isinstance(evaluation, Mapping) or not evaluation:
             raise ValueError("every run requires non-empty evaluation metrics")
         run_methods = {str(method) for method in evaluation}
-        run_learned_method = (
-            HYBRID_LEARNED_METHOD
-            if HYBRID_LEARNED_METHOD in run_methods
-            else LEARNED_METHOD
+        run_learned_method = next(
+            (
+                candidate
+                for candidate in LEARNED_METHODS
+                if candidate in run_methods
+            ),
+            LEARNED_METHOD,
         )
         if not {
             run_learned_method,

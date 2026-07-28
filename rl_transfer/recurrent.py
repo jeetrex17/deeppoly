@@ -54,21 +54,104 @@ class PPOSequence:
     returns: torch.Tensor
 
 
+class ActionConditionedActor(nn.Module):
+    """Shared scorer over patch geometry, RGB channel, and update sign."""
+
+    feature_dim = 6
+
+    def __init__(self, hidden_dim: int, grid_size: int) -> None:
+        super().__init__()
+        if (
+            not isinstance(grid_size, int)
+            or isinstance(grid_size, bool)
+            or grid_size < 1
+        ):
+            raise ValueError("action-conditioned actor requires a positive grid size")
+        features: list[tuple[float, ...]] = []
+        denominator = max(1, grid_size - 1)
+        for patch_index in range(grid_size * grid_size):
+            row, column = divmod(patch_index, grid_size)
+            row_position = -1.0 + 2.0 * row / denominator
+            column_position = -1.0 + 2.0 * column / denominator
+            for channel in range(3):
+                channel_features = tuple(
+                    1.0 if index == channel else 0.0
+                    for index in range(3)
+                )
+                for sign in (-1, 1):
+                    features.append(
+                        (
+                            row_position,
+                            column_position,
+                            *channel_features,
+                            float(sign),
+                        )
+                    )
+        self.register_buffer(
+            "action_features",
+            torch.tensor(features, dtype=torch.float32),
+            persistent=True,
+        )
+        self.state_projection = nn.Linear(hidden_dim, hidden_dim)
+        self.action_projection = nn.Sequential(
+            nn.Linear(self.feature_dim, hidden_dim),
+            nn.Tanh(),
+        )
+        self.action_bias = nn.Linear(self.feature_dim, 1, bias=False)
+        self.scale = math.sqrt(hidden_dim)
+
+    def forward(self, hidden: torch.Tensor) -> torch.Tensor:
+        query = self.state_projection(hidden)
+        action_embeddings = self.action_projection(self.action_features)
+        logits = query @ action_embeddings.transpose(0, 1) / self.scale
+        return logits + self.action_bias(self.action_features).squeeze(-1)
+
+
 class RecurrentAttackPolicy(nn.Module):
     """GRU actor-critic whose hidden state adapts without changing parameters."""
 
-    def __init__(self, observation_dim: int, action_dim: int, hidden_dim: int = 128, seed: int = 0, config: PPOConfig | None = None) -> None:
+    def __init__(
+        self,
+        observation_dim: int,
+        action_dim: int,
+        hidden_dim: int = 128,
+        seed: int = 0,
+        config: PPOConfig | None = None,
+        *,
+        actor_mode: str = "flat",
+        action_grid_size: int | None = None,
+    ) -> None:
         super().__init__()
         if min(observation_dim, action_dim, hidden_dim) < 1:
             raise ValueError("network dimensions must be positive")
+        if actor_mode not in {"flat", "action_conditioned"}:
+            raise ValueError("actor_mode must be 'flat' or 'action_conditioned'")
+        if actor_mode == "action_conditioned":
+            if (
+                not isinstance(action_grid_size, int)
+                or isinstance(action_grid_size, bool)
+                or action_grid_size < 1
+                or action_dim != action_grid_size * action_grid_size * 3 * 2
+            ):
+                raise ValueError(
+                    "action-conditioned actor dimensions must match the patch catalog"
+                )
+        elif action_grid_size is not None:
+            raise ValueError("flat actor does not accept action_grid_size")
         torch.manual_seed(seed)
         self.observation_dim = observation_dim
         self.action_dim = action_dim
         self.hidden_dim = hidden_dim
+        self.actor_mode = actor_mode
+        self.action_grid_size = action_grid_size
         self.config = config or PPOConfig()
         self.encoder = nn.Sequential(nn.Linear(observation_dim, hidden_dim), nn.Tanh())
         self.memory = nn.GRUCell(hidden_dim, hidden_dim)
-        self.actor = nn.Linear(hidden_dim, action_dim)
+        self.actor = (
+            nn.Linear(hidden_dim, action_dim)
+            if actor_mode == "flat"
+            else ActionConditionedActor(hidden_dim, action_grid_size)
+        )
         self.critic = nn.Linear(hidden_dim, 1)
         self.optimizer = torch.optim.Adam(self.parameters(), lr=self.config.learning_rate)
 
@@ -130,6 +213,8 @@ class RecurrentAttackPolicy(nn.Module):
         update(self.state_dict())
         update(self.optimizer.state_dict())
         hasher.update(json.dumps(asdict(self.config), sort_keys=True).encode("utf-8"))
+        hasher.update(self.actor_mode.encode("utf-8"))
+        hasher.update(repr(self.action_grid_size).encode("utf-8"))
         return hasher.hexdigest()
 
     def ppo_update(self, batch: PPOBatch) -> dict[str, float]:

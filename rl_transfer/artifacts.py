@@ -84,10 +84,12 @@ def save_recurrent_checkpoint(
 ) -> str:
     safe_metadata = json.loads(json.dumps(dict(metadata), sort_keys=True, allow_nan=False))
     payload = {
-        "schema_version": 1,
+        "schema_version": 2,
         "observation_dim": policy.observation_dim,
         "action_dim": policy.action_dim,
         "hidden_dim": policy.hidden_dim,
+        "actor_mode": policy.actor_mode,
+        "action_grid_size": policy.action_grid_size,
         "ppo_config": asdict(policy.config),
         "model": policy.state_dict(),
         "optimizer": policy.optimizer.state_dict(),
@@ -103,6 +105,7 @@ def load_recurrent_checkpoint(
     expected_observation_dim: int | None = None,
     expected_action_dim: int | None = None,
     expected_hidden_dim: int | None = None,
+    expected_actor_mode: str | None = None,
     max_file_bytes: int = 128 * 1024 * 1024,
 ) -> tuple[RecurrentAttackPolicy, dict[str, object]]:
     if (
@@ -116,7 +119,8 @@ def load_recurrent_checkpoint(
     if sha256_file(path) != expected_digest:
         raise ValueError("checkpoint SHA-256 verification failed")
     payload = torch.load(path, map_location=device, weights_only=True)
-    if payload.get("schema_version") != 1:
+    schema_version = payload.get("schema_version")
+    if schema_version not in {1, 2}:
         raise ValueError("unsupported recurrent checkpoint schema")
     dimensions = (
         int(payload["observation_dim"]),
@@ -139,11 +143,32 @@ def load_recurrent_checkpoint(
         and 1 <= dimensions[2] <= 1_024
     ):
         raise ValueError("recurrent checkpoint dimensions exceed safe limits")
+    actor_mode = (
+        str(payload.get("actor_mode", "flat"))
+        if schema_version == 2
+        else "flat"
+    )
+    action_grid_size = (
+        int(payload["action_grid_size"])
+        if schema_version == 2
+        and payload.get("action_grid_size") is not None
+        else None
+    )
+    if (
+        actor_mode not in {"flat", "action_conditioned"}
+        or (
+            expected_actor_mode is not None
+            and actor_mode != expected_actor_mode
+        )
+    ):
+        raise ValueError("recurrent checkpoint actor architecture mismatch")
     policy = RecurrentAttackPolicy(
         dimensions[0],
         dimensions[1],
         hidden_dim=dimensions[2],
         config=PPOConfig(**payload["ppo_config"]),
+        actor_mode=actor_mode,
+        action_grid_size=action_grid_size,
     ).to(device)
     policy.load_state_dict(payload["model"])
     policy.optimizer.load_state_dict(payload["optimizer"])
