@@ -1,0 +1,255 @@
+{
+  "behavior_cloning": {
+    "folds": 3,
+    "gate_passes": 0,
+    "mean_soft_ce_improvement_over_validation_oracle": -0.04884114521144589,
+    "mean_top5_gain_over_validation_oracle": -0.0398672173868519
+  },
+  "environment": {
+    "cuda_device_name": "NVIDIA GeForce RTX 2080 Ti",
+    "cuda_runtime": "13.0",
+    "cuda_total_memory_bytes": 11336482816,
+    "cudnn_version": 92000,
+    "determinism": "deterministic algorithms requested with warn_only",
+    "git_revision": "1525dc14c617ff7c715dd1bb62f48092d25ee941",
+    "nvidia_driver": "580.126.09",
+    "pip_freeze_sha256": "385c16a38cb84b34a84c284c5a2093cbbec3d70dcf067a2271f52eeaa46a0198",
+    "platform": "Linux-6.17.0-22-generic-x86_64-with-glibc2.39",
+    "python": "3.12.3",
+    "requirements_sha256": "e3e3730f92fa37cd3a7edc0b8f43af97d5444ebec8e04937a47f5e9df15db908",
+    "torch": "2.13.0+cu130"
+  },
+  "integrity": {
+    "all_source_audits_passed": true,
+    "protocol_sha256": "d67edae9b11f1ee499927378f64c34952837ef335d4c7db996bc3f9cd4718564",
+    "screen_manifest_sha256": "efd96c5775187ac29fbd1453e3d1654d26373fc17b7c0d22b0e4955215a0e054",
+    "study_code_digest": "48f670536cf4251555e110e9447f58ecf2bf8561bec49d67d7eba350dc9e0c78",
+    "verified_results_files": 3,
+    "verified_runs": 3,
+    "verified_sidecars": 19,
+    "verified_trace_files": 3
+  },
+  "interpretation": {
+    "source_screen_result": "negative",
+    "stage_c_authorized": false,
+    "target_evaluation_authorized": false,
+    "target_transfer_claim_supported": false
+  },
+  "outcomes": {
+    "fold_summary": [
+      {
+        "asr_gain": -0.0016666666666666774,
+        "auc_gain": -0.002347222222222216,
+        "bc_gate_passed": false,
+        "bc_seconds": 229.87892591800482,
+        "fingerprint": "025f7aea92d95d91067ce553af4e4c97c324ee2aae6a8b30b21bcac453dce7ee",
+        "learned_asr": 0.06958333333333333,
+        "learned_auc": 0.030926388888888892,
+        "omitted_target_family": "classical_cnn",
+        "ppo_seconds": 97.7151888480148,
+        "recorded_total_seconds": 537.4481854610203,
+        "score_greedy_asr": 0.07125000000000001,
+        "score_greedy_auc": 0.03327361111111111,
+        "seed": 17,
+        "source_calls": 23862,
+        "source_evaluation_seconds": 209.8540706950007,
+        "strict_source_gate_passed": false,
+        "trained_episodes": 492
+      },
+      {
+        "asr_gain": -0.0029734679734679803,
+        "auc_gain": -0.005341287991287989,
+        "bc_gate_passed": false,
+        "bc_seconds": 239.494266195994,
+        "fingerprint": "33054f9db786f8e26fd0da4fc7fbcfb21d7cab8542676987d1c9bf8ac9c2100e",
+        "learned_asr": 0.07480558855558855,
+        "learned_auc": 0.03250040218790219,
+        "omitted_target_family": "modern_cnn",
+        "ppo_seconds": 96.49829034501454,
+        "recorded_total_seconds": 541.2488234830089,
+        "score_greedy_asr": 0.07777905652905653,
+        "score_greedy_auc": 0.03784169017919018,
+        "seed": 17,
+        "source_calls": 24085,
+        "source_evaluation_seconds": 205.25626694200037,
+        "strict_source_gate_passed": false,
+        "trained_episodes": 497
+      },
+      {
+        "asr_gain": -0.00822072072072072,
+        "auc_gain": -0.0016641215391215401,
+        "bc_gate_passed": false,
+        "bc_seconds": 286.60988585298765,
+        "fingerprint": "de7dae352025eeb936afe4869281fb218759fbf934ffbe4c272fa11b9032aac5",
+        "learned_asr": 0.03580833580833581,
+        "learned_auc": 0.017056735306735307,
+        "omitted_target_family": "transformer",
+        "ppo_seconds": 113.33035034198838,
+        "recorded_total_seconds": 658.7057811389677,
+        "score_greedy_asr": 0.04402905652905653,
+        "score_greedy_auc": 0.018720856845856847,
+        "seed": 17,
+        "source_calls": 27064,
+        "source_evaluation_seconds": 258.7655449439917,
+        "strict_source_gate_passed": false,
+        "trained_episodes": 549
+      }
+    ],
+    "method_summary": [
+      {
+        "asr": 0.06006575256575256,
+        "asr_query_auc": 0.02682784212784213,
+        "conditions": 12,
+        "eligible": 1536,
+        "method": "soft_gradient_bc_action_conditioned_groupdro_ppo_stochastic",
+        "method_label": "Learned stochastic",
+        "normalized_action_entropy": 0.9499347201064516,
+        "pooled_asr": 0.052734375,
+        "successes": 81
+      },
+      {
+        "asr": 0.0276009526009526,
+        "asr_query_auc": 0.021484452034452036,
+        "conditions": 12,
+        "eligible": 1536,
+        "method": "bandit_action",
+        "method_label": "Bandit",
+        "normalized_action_entropy": 0.9845557976682809,
+        "pooled_asr": 0.024088541666666668,
+        "successes": 37
+      },
+      {
+        "asr": 0.0,
+        "asr_query_auc": 0.0,
+        "conditions": 12,
+        "eligible": 1536,
+        "method": "fixed_action",
+        "method_label": "Fixed",
+        "normalized_action_entropy": 0.0,
+        "pooled_asr": 0.0,
+        "successes": 0
+      },
+      {
+        "asr": 0.00832082082082082,
+        "asr_query_auc": 0.007898298298298299,
+        "conditions": 12,
+        "eligible": 1536,
+        "method": "soft_gradient_bc_action_conditioned_groupdro_ppo",
+        "method_label": "Learned deterministic",
+        "normalized_action_entropy": 0.05528114498333278,
+        "pooled_asr": 0.007161458333333333,
+        "successes": 11
+      },
+      {
+        "asr": 0.061204556204556206,
+        "asr_query_auc": 0.027206942656942654,
+        "conditions": 12,
+        "eligible": 1536,
+        "method": "random_action",
+        "method_label": "Random",
+        "normalized_action_entropy": 0.9980830088964097,
+        "pooled_asr": 0.0546875,
+        "successes": 84
+      },
+      {
+        "asr": 0.06435270435270435,
+        "asr_query_auc": 0.029945386045386047,
+        "conditions": 12,
+        "eligible": 1536,
+        "method": "score_greedy",
+        "method_label": "Score greedy",
+        "normalized_action_entropy": 0.9988703547948882,
+        "pooled_asr": 0.057942708333333336,
+        "successes": 89
+      }
+    ]
+  },
+  "promotion": {
+    "bc_diagnostic_modes": [
+      "soft_gradient_distillation"
+    ],
+    "completed_cells": 3,
+    "condition_count": 12,
+    "decision_scope": "source-only screening",
+    "eligible_for_stage_2b": false,
+    "expected_cells": 3,
+    "grid_complete": true,
+    "interpretation": "This exploratory gate selects whether to spend compute on a larger source-only screen. It is not the preregistered final publication gate and cannot authorize target access.",
+    "metrics": {
+      "mean_asr_gain_over_score_greedy": -0.0042869517869517865,
+      "mean_auc_gain_over_score_greedy": -0.0031175439175439162,
+      "mean_bc_loss_improvement_over_validation_oracle": -0.04884114521144589,
+      "mean_bc_top5_or_hard_accuracy_gain": -0.0398672173868519,
+      "positive_asr_and_auc_condition_fraction": 0.08333333333333333
+    },
+    "passed": false,
+    "publication_candidate": false,
+    "requirements": {
+      "grid_complete": true,
+      "mean_bc_accuracy_gain": false,
+      "mean_bc_nll_improvement": false,
+      "mean_score_asr_gain": false,
+      "mean_score_auc_gain": false,
+      "positive_condition_fraction": false
+    },
+    "strict_publication_source_gate_passes": 0,
+    "target_evaluation_authorized": false,
+    "thresholds": {
+      "minimum_mean_bc_accuracy_gain": 0.01,
+      "minimum_mean_bc_nll_improvement": 0.02,
+      "minimum_mean_score_asr_gain": 0.01,
+      "minimum_mean_score_auc_gain": 0.005,
+      "minimum_positive_condition_fraction": 0.67
+    }
+  },
+  "protocol": {
+    "design": "three-fold leave-one-family-out source-only Stage B",
+    "folds": 3,
+    "learned_method": "soft_gradient_bc_action_conditioned_groupdro_ppo_stochastic",
+    "policy_seed_count": 1,
+    "policy_seeds": [
+      17
+    ],
+    "primary_control": "score_greedy",
+    "query_budget_including_initialization": 50,
+    "source_conditions": 12
+  },
+  "publication_candidate": false,
+  "research_valid": false,
+  "runtime": {
+    "definition": "sum of manifest BC, PPO-block, and source-evaluation component timers",
+    "folds": [
+      {
+        "bc_seconds": 229.87892591800482,
+        "omitted_target_family": "classical_cnn",
+        "ppo_seconds": 97.7151888480148,
+        "recorded_total_seconds": 537.4481854610203,
+        "source_evaluation_seconds": 209.8540706950007
+      },
+      {
+        "bc_seconds": 239.494266195994,
+        "omitted_target_family": "modern_cnn",
+        "ppo_seconds": 96.49829034501454,
+        "recorded_total_seconds": 541.2488234830089,
+        "source_evaluation_seconds": 205.25626694200037
+      },
+      {
+        "bc_seconds": 286.60988585298765,
+        "omitted_target_family": "transformer",
+        "ppo_seconds": 113.33035034198838,
+        "recorded_total_seconds": 658.7057811389677,
+        "source_evaluation_seconds": 258.7655449439917
+      }
+    ],
+    "recorded_component_minutes": 28.956713168049948,
+    "recorded_component_seconds": 1737.402790082997
+  },
+  "schema_version": 1,
+  "status": "screen_complete",
+  "study_name": "cifar10-rtx-phase2-action-conditioned-screen",
+  "target_evaluation": {
+    "hidden_target_attack_cohort_opened": false,
+    "target_calls": 0,
+    "target_evaluation_performed": false
+  }
+}

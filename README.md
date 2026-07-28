@@ -7,9 +7,9 @@ Research code for two related robustness directions:
 
 The transferability work asks a specific question: can an RL attack policy learn reusable attack behavior from multiple source architectures, then transfer to an unseen target architecture under a fixed query budget?
 
-> Current status: the RTX Phase 1 source study completed all **30 family/seed cells**. Victim quality and artifact audits passed, but the locked source-competence gate failed. The shared victim bank was fit and clean-validated, but the held-out attack cohorts remained unopened and the recorded held-out attack-call count is zero. Phase 2 now uses a short, source-only screen that stops weak candidates before another long run.
+> Current status: RTX Phase 1 completed all **30 family/seed cells**, and Phase 2 Stage B completed all **3 development cells and 12 source conditions**. Both source gates failed. Phase 2 required about **29 recorded compute minutes**, stopped before the longer replication stage, and made **zero hidden-target attack calls**.
 
-## RTX Phase 1 result and Phase 2
+## RTX Phase 1 and Phase 2 results
 
 Phase 1 used three leave-one-family-out folds, ten policy seeds, a fixed verified victim bank, behavior cloning from a privileged source-gradient teacher, GroupDRO PPO, component ablations, and matched black-box controls. The full source phase took 16.26 hours.
 
@@ -28,7 +28,33 @@ The checksum-backed evidence bundle contains all 30 run summaries, every source 
 - [RTX Phase 1 evidence and interpretation](docs/research/cifar10_rtx_phase1/README.md)
 - [Phase 2 preregistered source protocol](docs/research/cifar10_rtx_phase2_protocol.md)
 
-Phase 2 tests a richer patch-statistics observation, normalized soft gradient distillation, and a shared action-conditioned actor. Stage A is a bounded diagnostic of the old frozen Phase 1 checkpoint; it does not tune the new actor. The trainable Stage B screen uses one development seed across all three folds, 600 BC episodes and 600 PPO episodes per cell, with authenticated Phase 1 source victims reused and a 60-minute scheduling threshold. Neither command has a target-evaluation mode.
+Phase 2 tested a richer patch-statistics observation, normalized soft-gradient distillation, and a shared action-conditioned actor. Stage B used one development seed across all three folds, 600 BC episodes and 600 scheduled PPO episodes per cell, authenticated Phase 1 source victims, and 100 source-evaluation images per cell.
+
+| Phase 2 Stage B measure | Observed | Required |
+| --- | ---: | ---: |
+| Mean ASR gain over score greedy | -0.43 points | +1.00 point |
+| Mean ASR-query AUC gain | -0.31 points | +0.50 points |
+| Mean soft top-5 gain over validation oracle | -3.99 points | +1.00 point |
+| Mean soft cross-entropy improvement | -0.0488 | +0.0200 |
+| Conditions positive on both ASR and AUC | 1 / 12 | at least 9 / 12 |
+| Strict source gates passed | 0 / 3 | diagnostic only |
+
+![Phase 2 source ASR by method](docs/research/cifar10_rtx_phase2_stage_b/source_asr_by_method.svg)
+
+The stochastic learned policy reached 6.01% macro source ASR, compared with 6.44% for score greedy and 6.12% for random action. Its deterministic deployment reached only 0.83%. The primary failure is therefore not a lack of attack events. It is a failure to learn a source policy that is better calibrated and more query-efficient than strong matched controls.
+
+The complete Git-safe evidence bundle includes every raw numerical result row, sampled query trace, source condition, victim accuracy, BC diagnostic, PPO block, runtime component, and artifact hash:
+
+- [RTX Phase 2 Stage B evidence and interpretation](docs/research/cifar10_rtx_phase2_stage_b/README.md)
+- [Deadline-aware source-only next steps](docs/research/cifar10_rtx_phase2_next_steps.md)
+
+Stage C and target evaluation were not run because the locked Stage B gate failed. The full 90 MB archive, including policy and victim checkpoints, is retained locally under `output/rl_transfer/cifar10_rtx_phase2_screen`. Recreate the compact evidence bundle with:
+
+```bash
+uv run python scripts/export_phase2_evidence.py
+```
+
+The following commands reproduce or resume the locked Phase 2 screen. Neither command has a target-evaluation mode.
 
 ```bash
 uv run python -m rl_transfer.phase2_temperature_cli \
