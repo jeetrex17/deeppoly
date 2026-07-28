@@ -1,5 +1,6 @@
 import gzip
 import hashlib
+import importlib.util
 import io
 import json
 import tarfile
@@ -622,7 +623,19 @@ class Phase2EvidenceExportTests(unittest.TestCase):
                 export_phase2_evidence(source, source / "bundle")
 
     def test_cli_reports_the_verified_export(self) -> None:
-        from scripts import export_phase2_evidence
+        script_path = (
+            Path(__file__).parents[1]
+            / "scripts"
+            / "export_phase2_evidence.py"
+        )
+        spec = importlib.util.spec_from_file_location(
+            "phase2_export_evidence_script",
+            script_path,
+        )
+        if spec is None or spec.loader is None:
+            self.fail("could not load the Phase 2 export CLI")
+        export_phase2_evidence = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(export_phase2_evidence)
 
         summary = {
             "status": "screen_complete",
