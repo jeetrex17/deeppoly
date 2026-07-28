@@ -42,9 +42,7 @@ def _named_targets(
         or not isinstance(item[1], nn.Module)
         for item in targets
     ):
-        raise ValueError(
-            "evaluation requires one or more named victim modules"
-        )
+        raise ValueError("evaluation requires one or more named victim modules")
     return targets
 
 
@@ -62,11 +60,7 @@ def _method_summary(
     eligible = sum(outcome.clean_correct for outcome in outcomes)
     curve = asr_at_budgets(outcomes, budgets) if eligible else {}
     auc = asr_query_auc(curve) if eligible else None
-    action_counts = Counter(
-        action
-        for row in rows
-        for action in row.action_trace
-    )
+    action_counts = Counter(action for row in rows for action in row.action_trace)
     action_total = sum(action_counts.values())
     action_entropy = 0.0
     if action_total and attack.action_dim > 1:
@@ -89,9 +83,7 @@ def _method_summary(
             rollback_on_non_improvement=True,
         )
     )
-    eligible_ids = sorted(
-        row.sample_id for row in rows if row.clean_correct
-    )
+    eligible_ids = sorted(row.sample_id for row in rows if row.clean_correct)
     eligible_digest = hashlib.sha256(
         "\n".join(eligible_ids).encode("utf-8")
     ).hexdigest()
@@ -120,8 +112,7 @@ def _method_summary(
             else None
         ),
         "action_histogram": {
-            str(action): count
-            for action, count in sorted(action_counts.items())
+            str(action): count for action, count in sorted(action_counts.items())
         },
         "normalized_action_entropy": action_entropy,
     }
@@ -132,22 +123,17 @@ def _victim_performance(
     attack: AttackConfig,
 ) -> dict[str, object]:
     outcomes = tuple(
-        AttackOutcome(row.clean_correct, row.query_to_success)
-        for row in rows
+        AttackOutcome(row.clean_correct, row.query_to_success) for row in rows
     )
     eligible = sum(outcome.clean_correct for outcome in outcomes)
     budgets = tuple(range(attack.max_queries + 1))
     curve = asr_at_budgets(outcomes, budgets) if eligible else {}
-    eligible_ids = sorted(
-        row.sample_id for row in rows if row.clean_correct
-    )
+    eligible_ids = sorted(row.sample_id for row in rows if row.clean_correct)
     return {
         "eligible": eligible,
         "successes": sum(row.success for row in rows),
         "asr_at_budgets": curve,
-        "asr_query_auc": (
-            asr_query_auc(curve) if eligible else None
-        ),
+        "asr_query_auc": (asr_query_auc(curve) if eligible else None),
         "eligible_sample_ids_sha256": hashlib.sha256(
             "\n".join(eligible_ids).encode("utf-8")
         ).hexdigest(),
@@ -167,16 +153,14 @@ def evaluate_methods(
     additional_policies: Mapping[
         str,
         tuple[RecurrentAttackPolicy, bool],
-    ] | None = None,
+    ]
+    | None = None,
     main_method_prefix: str = "groupdro_recurrent_ppo",
 ) -> tuple[
     list[ResearchResultRow],
     list[dict[str, object]],
     dict[str, object],
 ]:
-    targets = _named_targets(target)
-    if trace_samples_per_method < -1:
-        raise ValueError("trace sample limit must be -1 or non-negative")
     methods: dict[str, tuple[object | None, bool]]
     if additional_policies:
         methods = {
@@ -212,17 +196,70 @@ def evaluate_methods(
     if additional_policies:
         overlap = set(methods) & set(additional_policies)
         if overlap:
-            raise ValueError(
-                f"additional policy names overlap: {sorted(overlap)}"
-            )
-        methods.update(additional_policies)
+            raise ValueError(f"additional policy names overlap: {sorted(overlap)}")
+        methods = {**methods, **additional_policies}
+    return evaluate_method_set(
+        methods,
+        target,
+        samples,
+        indices,
+        attack,
+        seed,
+        target_family,
+        progress,
+        trace_samples_per_method=trace_samples_per_method,
+    )
+
+
+def evaluate_method_set(
+    methods: Mapping[str, tuple[object | None, bool]],
+    target: tuple[str, nn.Module] | Sequence[tuple[str, nn.Module]],
+    samples: tuple[tuple[torch.Tensor, int], ...],
+    indices: Sequence[int],
+    attack: AttackConfig,
+    seed: int,
+    target_family: str,
+    progress: Callable[[str], None],
+    trace_samples_per_method: int = -1,
+    stochastic_seed_namespace: str | None = None,
+) -> tuple[
+    list[ResearchResultRow],
+    list[dict[str, object]],
+    dict[str, object],
+]:
+    """Evaluate an explicit frozen method set on a shared cohort.
+
+    ``stochastic_seed_namespace`` makes stochastic policies consume the same
+    per-episode uniform draws. This supports paired policy diagnostics such as
+    temperature sweeps without changing the legacy evaluator's seed contract.
+    """
+
+    targets = _named_targets(target)
+    selected_methods = dict(methods)
+    if not selected_methods:
+        raise ValueError("evaluation requires one or more methods")
+    if any(not isinstance(name, str) or not name.strip() for name in selected_methods):
+        raise ValueError("evaluation method names must be non-empty strings")
+    if any(
+        not isinstance(specification, tuple)
+        or len(specification) != 2
+        or not isinstance(specification[1], bool)
+        for specification in selected_methods.values()
+    ):
+        raise ValueError("each method must map to a (policy, deterministic) tuple")
+    if len(samples) != len(indices):
+        raise ValueError("samples and indices must have identical lengths")
+    if trace_samples_per_method < -1:
+        raise ValueError("trace sample limit must be -1 or non-negative")
+    if stochastic_seed_namespace is not None and not stochastic_seed_namespace.strip():
+        raise ValueError("stochastic seed namespace must be a non-empty string")
     all_rows: list[ResearchResultRow] = []
     traces: list[dict[str, object]] = []
     summary: dict[str, object] = {}
     for method_offset, (
         method,
         (attack_policy, deterministic),
-    ) in enumerate(methods.items()):
+    ) in enumerate(selected_methods.items()):
         progress(
             f"evaluating {method} on {len(samples)} images across "
             f"{len(targets)} victim instance(s)"
@@ -231,9 +268,7 @@ def evaluate_methods(
         if torch.backends.mps.is_available():
             torch.mps.manual_seed(seed + 100_000 + method_offset)
         digest_before = (
-            attack_policy.persistent_digest()
-            if attack_policy is not None
-            else None
+            attack_policy.persistent_digest() if attack_policy is not None else None
         )
         outcomes: list[AttackOutcome] = []
         method_rows: list[ResearchResultRow] = []
@@ -244,9 +279,7 @@ def evaluate_methods(
         captured_traces = 0
         for victim_id, victim in targets:
             for (image, label), dataset_index in zip(samples, indices):
-                sample_id = (
-                    f"cifar10:{target_family}:{victim_id}:{dataset_index}"
-                )
+                sample_id = f"cifar10:{target_family}:{victim_id}:{dataset_index}"
                 if attack_policy is None:
                     result = run_score_greedy_episode(
                         victim,
@@ -258,10 +291,13 @@ def evaluate_methods(
                         attack,
                         seed + method_offset,
                     )
-                    digest_before = (
-                        digest_before or result.policy_digest_before
-                    )
+                    digest_before = digest_before or result.policy_digest_before
                 else:
+                    seed_method = (
+                        stochastic_seed_namespace
+                        if stochastic_seed_namespace is not None and not deterministic
+                        else method
+                    )
                     result = run_frozen_episode(
                         attack_policy,
                         victim,
@@ -275,7 +311,7 @@ def evaluate_methods(
                         episode_seed=int.from_bytes(
                             hashlib.sha256(
                                 (
-                                    f"frozen-eval-v1:{seed}:{method}:"
+                                    f"frozen-eval-v1:{seed}:{seed_method}:"
                                     f"{victim_id}:{sample_id}"
                                 ).encode()
                             ).digest()[:8],
@@ -311,17 +347,14 @@ def evaluate_methods(
                 initialization_flags.append(
                     bool(
                         result.query_trace
-                        and result.query_trace[0]["purpose"]
-                        == "initialization"
+                        and result.query_trace[0]["purpose"] == "initialization"
                     )
                 )
                 if (
                     trace_samples_per_method == -1
                     or captured_traces < trace_samples_per_method
                 ):
-                    traces.append(
-                        {"method": method, **result.as_dict()}
-                    )
+                    traces.append({"method": method, **result.as_dict()})
                     captured_traces += 1
         method_summary = _method_summary(
             method_rows,
