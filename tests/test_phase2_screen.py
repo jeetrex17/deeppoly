@@ -781,6 +781,35 @@ class Phase2RunnerTests(unittest.TestCase):
                 run_output_dir=output,
             )
 
+    def test_artifact_validator_accepts_json_equivalent_budget_keys(
+        self,
+    ) -> None:
+        from rl_transfer.phase2_screen import validate_source_run_artifacts
+
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory)
+            run, derived = _write_source_artifact_fixture(
+                output,
+                binding_matches=True,
+            )
+            learned = run["source_evaluation"]["exact_source"][
+                "modern_cnn"
+            ][
+                "soft_gradient_bc_action_conditioned_groupdro_ppo_stochastic"
+            ]
+            learned["asr_at_budgets"] = {
+                int(budget): value
+                for budget, value in learned[
+                    "asr_at_budgets"
+                ].items()
+            }
+
+            validate_source_run_artifacts(
+                run,
+                derived_config=derived,
+                run_output_dir=output,
+            )
+
     def test_portable_source_bundle_validates_after_root_relocation(
         self,
     ) -> None:

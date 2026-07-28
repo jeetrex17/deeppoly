@@ -92,8 +92,8 @@ def validate_source_run_artifacts(
     source_cache = load_verified_json(
         run_dir / "source_evaluation.json"
     )
-    if source_cache.get("source_evaluation") != run.get(
-        "source_evaluation"
+    if source_cache.get("source_evaluation") != _json_record(
+        run.get("source_evaluation")
     ):
         raise ValueError("persisted source evaluation mismatch")
     runtime = run.get("runtime")
