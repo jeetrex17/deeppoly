@@ -1,11 +1,13 @@
 from dataclasses import asdict
 from contextlib import contextmanager
+import errno
 import fcntl
 import hashlib
 import json
 import os
 from pathlib import Path
 import re
+import stat
 import tempfile
 from typing import Mapping
 
@@ -36,12 +38,36 @@ def exclusive_file_lock(path: Path):
     """Serialize checkpoint readers/writers across local study processes."""
 
     path.parent.mkdir(parents=True, exist_ok=True)
-    with path.open("a+b") as handle:
-        fcntl.flock(handle.fileno(), fcntl.LOCK_EX)
+    nofollow = getattr(os, "O_NOFOLLOW", None)
+    if nofollow is None:
+        raise RuntimeError("secure file locking requires O_NOFOLLOW support")
+    flags = os.O_RDWR | os.O_CREAT | os.O_APPEND | nofollow
+    descriptor = -1
+    try:
         try:
-            yield
-        finally:
-            fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
+            descriptor = os.open(path, flags, 0o600)
+        except OSError as error:
+            if error.errno in {errno.ELOOP, errno.EMLINK}:
+                raise ValueError("lock path cannot be a symlink") from error
+            raise
+        opened = os.fstat(descriptor)
+        current = os.lstat(path)
+        if (
+            not stat.S_ISREG(opened.st_mode)
+            or stat.S_ISLNK(current.st_mode)
+            or (opened.st_dev, opened.st_ino) != (current.st_dev, current.st_ino)
+        ):
+            raise ValueError("lock path must be one stable regular file")
+        with os.fdopen(descriptor, "a+b", closefd=True) as handle:
+            descriptor = -1
+            fcntl.flock(handle.fileno(), fcntl.LOCK_EX)
+            try:
+                yield
+            finally:
+                fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
+    finally:
+        if descriptor >= 0:
+            os.close(descriptor)
 
 
 def _atomic_text_write(path: Path, value: str) -> None:

@@ -3,6 +3,7 @@ import hashlib
 import math
 import random
 import statistics
+from collections.abc import Callable
 from typing import Mapping, Sequence
 
 import numpy as np
@@ -44,7 +45,11 @@ def _distribution_summary(values: Sequence[float]) -> dict[str, object]:
     return {
         "count": len(numeric),
         "mean": statistics.fmean(numeric) if numeric else None,
-        "std": statistics.stdev(numeric) if len(numeric) > 1 else 0.0 if numeric else None,
+        "std": statistics.stdev(numeric)
+        if len(numeric) > 1
+        else 0.0
+        if numeric
+        else None,
         "min": min(numeric) if numeric else None,
         "max": max(numeric) if numeric else None,
     }
@@ -65,10 +70,18 @@ def calibration_resistant_observation(
 ) -> np.ndarray:
     rank = int((scores > scores[label]).sum())
     normalized_rank = rank / max(1, scores.numel() - 1)
-    entropy = float(-(scores.clamp_min(1e-12) * scores.clamp_min(1e-12).log()).sum() / math.log(scores.numel()))
-    delta = float((scores[label] - initial_scores[label]) / initial_scores[label].abs().clamp_min(1e-6))
-    rival = float(torch.cat((scores[:label], scores[label + 1:])).max())
-    action_feature = -1.0 if previous_action is None else previous_action / max(1, action_dim - 1)
+    entropy = float(
+        -(scores.clamp_min(1e-12) * scores.clamp_min(1e-12).log()).sum()
+        / math.log(scores.numel())
+    )
+    delta = float(
+        (scores[label] - initial_scores[label])
+        / initial_scores[label].abs().clamp_min(1e-6)
+    )
+    rival = float(torch.cat((scores[:label], scores[label + 1 :])).max())
+    action_feature = (
+        -1.0 if previous_action is None else previous_action / max(1, action_dim - 1)
+    )
     base = np.asarray(
         (
             normalized_rank,
@@ -110,7 +123,9 @@ def calibration_resistant_observation(
     return np.concatenate(blocks).astype(np.float32, copy=False)
 
 
-def _validated_catalog(policy: RecurrentAttackPolicy, config: AttackConfig, channels: int):
+def _validated_catalog(
+    policy: RecurrentAttackPolicy, config: AttackConfig, channels: int
+):
     catalog = patch_catalog(config.grid_size, channels)
     if len(catalog) != config.action_dim or policy.action_dim != len(catalog):
         raise ValueError("policy, config, and action catalog dimensions must match")
@@ -144,7 +159,21 @@ def run_frozen_episode(
     clean_scores = initial.scores.clone()
     clean_correct = initial.predicted_label == label
     if not clean_correct:
-        return FrozenEpisodeResult(sample_id, victim_id, family, False, False, None, oracle.calls, 0.0, 0.0, (), before, policy.persistent_digest(), tuple(oracle.trace_dicts()))
+        return FrozenEpisodeResult(
+            sample_id,
+            victim_id,
+            family,
+            False,
+            False,
+            None,
+            oracle.calls,
+            0.0,
+            0.0,
+            (),
+            before,
+            policy.persistent_digest(),
+            tuple(oracle.trace_dicts()),
+        )
     hidden = policy.initial_state()
     stochastic_seed = (
         episode_seed
@@ -156,7 +185,9 @@ def run_frozen_episode(
             "big",
         )
     )
-    action_rng = random.Random(stochastic_seed)
+    # This seeded RNG makes the scientific replay reproducible; it does not
+    # protect secrets or make a security-sensitive decision.
+    action_rng = random.Random(stochastic_seed)  # noqa: S311
     previous_action, previous_reward = None, 0.0
     action_counts = np.zeros(config.action_dim, dtype=np.float32)
     action_values = np.zeros(config.action_dim, dtype=np.float32)
@@ -186,9 +217,7 @@ def run_frozen_episode(
                 observation,
                 hidden,
                 deterministic=deterministic,
-                random_draw=(
-                    None if deterministic else action_rng.random()
-                ),
+                random_draw=(None if deterministic else action_rng.random()),
             )
         else:
             action, hidden = policy.act(
@@ -238,7 +267,21 @@ def run_frozen_episode(
     after = policy.persistent_digest()
     if before != after:
         raise RuntimeError("frozen deployment mutated persistent policy state")
-    return FrozenEpisodeResult(sample_id, victim_id, family, True, success, success_query, oracle.calls, float(delta.abs().max()), float(delta.flatten().norm()), tuple(actions), before, after, tuple(oracle.trace_dicts()))
+    return FrozenEpisodeResult(
+        sample_id,
+        victim_id,
+        family,
+        True,
+        success,
+        success_query,
+        oracle.calls,
+        float(delta.abs().max()),
+        float(delta.flatten().norm()),
+        tuple(actions),
+        before,
+        after,
+        tuple(oracle.trace_dicts()),
+    )
 
 
 def run_score_greedy_episode(
@@ -250,6 +293,8 @@ def run_score_greedy_episode(
     family: str,
     config: AttackConfig,
     seed: int,
+    *,
+    deadline_check: Callable[[], None] | None = None,
 ) -> FrozenEpisodeResult:
     """Query-matched SimBA-style score attack with accept/reject proposals.
 
@@ -258,6 +303,10 @@ def run_score_greedy_episode(
     initialization query is included in the same total target-query budget.
     """
 
+    if deadline_check is not None and not callable(deadline_check):
+        raise TypeError("score-greedy deadline check must be callable")
+    if deadline_check is not None:
+        deadline_check()
     parameter = next(victim.parameters(), None)
     buffer = next(victim.buffers(), None)
     device = (
@@ -298,12 +347,16 @@ def run_score_greedy_episode(
     episode_seed = seed ^ int.from_bytes(
         hashlib.sha256(sample_id.encode()).digest()[:8], "big"
     )
-    random.Random(episode_seed).shuffle(catalog)
+    # The proposal permutation is a reproducible experiment schedule, not a
+    # cryptographic operation.
+    random.Random(episode_seed).shuffle(catalog)  # noqa: S311
     actions: list[int] = []
     success = False
     success_query: int | None = None
     proposal_index = 0
     while oracle.calls < config.max_queries and not success:
+        if deadline_check is not None:
+            deadline_check()
         action_index, action = catalog[proposal_index % len(catalog)]
         proposal = apply_action(
             accepted,
@@ -374,11 +427,15 @@ def train_population_policy(
 ) -> dict[str, object]:
     if not victims or not samples:
         raise ValueError("victims and samples are required")
-    if initial_family_weights is not None and set(initial_family_weights) != set(victims):
+    if initial_family_weights is not None and set(initial_family_weights) != set(
+        victims
+    ):
         raise ValueError("initial family weights must match the victim families")
     if episode_offset < 0:
         raise ValueError("episode_offset cannot be negative")
-    if initial_instance_offsets is not None and set(initial_instance_offsets) != set(victims):
+    if initial_instance_offsets is not None and set(initial_instance_offsets) != set(
+        victims
+    ):
         raise ValueError("initial instance offsets must match the victim families")
     victim_instances: dict[str, tuple[tuple[str, nn.Module], ...]] = {}
     for family, value in victims.items():
@@ -398,7 +455,9 @@ def train_population_policy(
             or not isinstance(instance[1], nn.Module)
             for instance in instances
         ):
-            raise ValueError("each source family requires one or more named victim modules")
+            raise ValueError(
+                "each source family requires one or more named victim modules"
+            )
         victim_instances[family] = instances
     device = next(policy.parameters()).device
     schedule = balanced_family_schedule(tuple(victims), episodes, seed)
@@ -559,10 +618,23 @@ def train_population_policy(
         for reward in reversed(rewards):
             running = reward + 0.98 * running
             returns.append(running)
-        returns_tensor = torch.tensor(tuple(reversed(returns)), dtype=torch.float32, device=device)
+        returns_tensor = torch.tensor(
+            tuple(reversed(returns)), dtype=torch.float32, device=device
+        )
         values_tensor = torch.stack(values)
         advantages = returns_tensor - values_tensor
-        sequences.append((family, PPOSequence(torch.stack(observations), torch.stack(actions), torch.stack(old_logs), advantages, returns_tensor)))
+        sequences.append(
+            (
+                family,
+                PPOSequence(
+                    torch.stack(observations),
+                    torch.stack(actions),
+                    torch.stack(old_logs),
+                    advantages,
+                    returns_tensor,
+                ),
+            )
+        )
         episode_return = sum(rewards)
         family_rewards[family].append(episode_return)
         instance_rewards[victim_id].append(episode_return)
@@ -582,8 +654,7 @@ def train_population_policy(
         observed_weights = FamilyRobustWeights(
             observed_families,
             values=tuple(
-                weights_before[family] / observed_mass
-                for family in observed_families
+                weights_before[family] / observed_mass for family in observed_families
             ),
         ).update(losses)
         weights = {
@@ -603,9 +674,7 @@ def train_population_policy(
             "successful_episodes": family_successes[family],
             "source_calls": source_calls_by_family[family],
             "episode_return": _distribution_summary(family_rewards[family]),
-            "margin_reduction": _distribution_summary(
-                family_margin_reductions[family]
-            ),
+            "margin_reduction": _distribution_summary(family_margin_reductions[family]),
             "groupdro_loss": losses.get(family),
             "weight_before": weights_before[family],
             "weight_after": weights[family],
@@ -647,7 +716,10 @@ def train_population_policy(
             **shared_metrics,
             "trained_episodes": 0,
         }
-    sequence_counts = {family: sum(item_family == family for item_family, _ in sequences) for family in victims}
+    sequence_counts = {
+        family: sum(item_family == family for item_family, _ in sequences)
+        for family in victims
+    }
     training_mass = sum(weights[family] for family in observed_families)
     metrics = policy.ppo_update_sequences(
         [
